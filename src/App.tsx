@@ -1,0 +1,71 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute, { ProtectedNoNav } from './components/ProtectedRoute';
+
+import Login from './pages/Login/Login';
+import Home from './pages/Home/Home';
+import Profile from './pages/Profile/Profile';
+import PersonalDetails from './pages/Profile/PersonalDetails';
+import Passport from './pages/Profile/Passport';
+import ResidentId from './pages/Profile/ResidentId';
+import Visa from './pages/Profile/Visa';
+import Services from './pages/Services/Services';
+import Family from './pages/Family/Family';
+import Workers from './pages/Workers/Workers';
+import Other from './pages/Other/Other';
+import Settings from './pages/Settings/Settings';
+
+import useAndroidBackButton from './hooks/useAndroidBackButton';
+import DrivingLicense from './pages/Profile/DrivingLicense';
+import LaborImportations from './pages/Profile/LaborImportations';
+import TravelRecord from './pages/Profile/TravelRecord';
+import Welcome from './pages/Welcome/Welcome';
+
+function AppRoutes() {
+  useAndroidBackButton();
+
+  return (
+    <div className="mx-auto min-h-[100dvh] w-full max-w-md bg-black font-sans!">
+      <Routes>
+        <Route path="/" element={<Welcome />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/login" element={<Login />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/family" element={<Family />} />
+          <Route path="/workers" element={<Workers />} />
+          <Route path="/other" element={<Other />} />
+        </Route>
+
+        <Route element={<ProtectedNoNav />}>
+          <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/profile/personal-details"
+            element={<PersonalDetails />}
+          />
+          <Route path="/profile/passport" element={<Passport />} />
+          <Route path="/profile/resident-id" element={<ResidentId />} />
+          <Route path="/profile/visa" element={<Visa />} />
+          <Route path="/profile/driving-license" element={<DrivingLicense />} />
+          <Route path="/profile/labor-importance" element={<LaborImportations />} />
+          <Route path="/profile/travel-record" element={<TravelRecord />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
