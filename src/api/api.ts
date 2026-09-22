@@ -1,17 +1,20 @@
-const API_BASE_URL = 'http://localhost:4000';
+import { Preferences } from '@capacitor/preferences';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export interface Employee {
     id?: string;
     _id?: string;
+
     name: string;
     residentIdNumber: string;
+
     idVersion?: string;
     nationality?: string;
     birthCity?: string;
     birthCountry?: string;
     dateOfBirth?: string;
     maritalStatus?: string;
-    sponsorshipTransfers?: string;
+    sponsorshipTransfers?: number;
     religion?: string;
     occupation?: string;
     employer?: string;
@@ -22,6 +25,7 @@ export interface Employee {
     residentIdExpiry?: string;
     sponsorName?: string;
     sponsorIdNumber?: string;
+
     avatarUrl?: string;
 
     passport?: {
@@ -34,26 +38,54 @@ export interface Employee {
         status?: string;
     };
 
-    hajj?: {
+    hajjDetails?: {
         status?: string;
         lastHajjYear?: string;
     };
+
+    qrData?: {
+        name?: string;
+        residentIdNumber?: string;
+        nationality?: string;
+        dateOfBirth?: string;
+        sponsorName?: string;
+        sponsorIdNumber?: string;
+    };
+
+    [key: string]: unknown;
 }
 
 export interface LoginResponse {
     message?: string;
-    employee?: Employee;
+    token: string;
+    employee: Employee;
+}
+
+export interface MeResponse {
+    employee: Employee;
 }
 
 export async function apiFetch<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
+    const tokenResult = await Preferences.get({
+        key: 'absher_token',
+    });
+
+    const token = tokenResult.value;
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
-        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
+
+            ...(token
+                ? {
+                    Authorization: `Bearer ${token}`,
+                }
+                : {}),
+
             ...options.headers,
         },
     });

@@ -1,29 +1,63 @@
 import SubPageHeader from '../../components/SubPageHeader';
-import ExpandableSection, { DetailRow } from '../../components/ExpandableSection/ExpandableSection';
-import { demoPassport } from '../../data/demoEmployee';
+import ExpandableSection, {
+  DetailRow,
+} from '../../components/ExpandableSection/ExpandableSection';
 import { GlobeIcon, CopyIcon } from '../../components/icons';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Passport() {
-  const p = demoPassport;
+  const { employee } = useAuth();
+
+  const p = employee?.passport;
+
+  if (!p) {
+    return null;
+  }
+
   return (
     <div className="min-h-full bg-black pb-10">
       <SubPageHeader title="My Passport" />
+
       <div className="flex flex-col gap-3 px-4">
         <div className="rounded-2xl bg-[#2a2a2a] p-4">
-          <p className="text-[13px] font-semibold text-white">Amount deposit</p>
-          <p className="mt-1 text-[15px] text-white/60">{p.amountDeposit}</p>
+          <p className="text-[13px] font-semibold text-white">
+            Amount deposit
+          </p>
+
+          <p className="mt-1 text-[15px] text-white/60">
+            {p.amountDeposit}
+          </p>
         </div>
 
-        <ExpandableSection defaultOpen icon={<GlobeIcon width={22} height={22} />} title="Normal Passport">
+        <ExpandableSection
+          defaultOpen
+          icon={<GlobeIcon width={22} height={22} />}
+          title="Normal Passport"
+        >
           <div className="flex items-start justify-between py-2.5">
             <div>
-              <p className="text-[13px] font-semibold text-white">Passport Number</p>
-              <p className="mt-1 text-[15px] text-white/60">{p.passportNumber}</p>
+              <p className="text-[13px] font-semibold text-white">
+                Passport Number
+              </p>
+
+              <p className="mt-1 text-[15px] text-white/60">
+                {p.passportNumber}
+              </p>
             </div>
-            <button className="mt-1 text-brand-mint" onClick={() => navigator.clipboard?.writeText(p.passportNumber)} aria-label="Copy passport number">
+
+            <button
+              className="mt-1 text-brand-mint"
+              onClick={() =>
+                navigator.clipboard?.writeText(
+                  p.passportNumber
+                )
+              }
+              aria-label="Copy passport number"
+            >
               <CopyIcon width={18} height={18} />
             </button>
           </div>
+
           <DetailRow label="Type" value={p.type} />
           <DetailRow label="Issuing Date" value={p.issuingDate} />
           <DetailRow label="Expiry Date" value={p.expiryDate} />

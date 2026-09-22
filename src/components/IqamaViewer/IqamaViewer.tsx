@@ -14,10 +14,8 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { CloseIcon } from '../icons';
 
 import absherLogo from '../../assets/absher-logo.png';
-import iqamaFront from '../../assets/iqama-card.png';
-import qrCode from '../../assets/qr-code.png';
 
-import { demoEmployee } from '../../data/demoEmployee';
+import { useAuth } from '../../context/AuthContext';
 
 interface IqamaViewerProps {
   open: boolean;
@@ -41,40 +39,33 @@ const SystemBars = registerPlugin<{
 const PAGES = [
   {
     key: 'front',
-    src: iqamaFront,
   },
   {
     key: 'qr',
-    src: qrCode,
   },
 ] as const;
-
-const qrData = JSON.stringify({
-  name: demoEmployee.name,
-  iqamaId: demoEmployee.residentIdNumber,
-  idVersion: demoEmployee.idVersion,
-  nationality: demoEmployee.nationality,
-  birthCity: demoEmployee.birthCity,
-  birthCountry: demoEmployee.birthCountry,
-  dateOfBirth: demoEmployee.dateOfBirth,
-  maritalStatus: demoEmployee.maritalStatus,
-  sponsorshipTransfers: demoEmployee.sponsorshipTransfers,
-  religion: demoEmployee.religion,
-  occupation: demoEmployee.occupation,
-  employer: demoEmployee.employer,
-  employerIdNumber: demoEmployee.employerIdNumber,
-  issuePlace: demoEmployee.issuePlace,
-  workPermit: demoEmployee.workPermit,
-  residentIdIssueDate: demoEmployee.residentIdIssueDate,
-  residentIdExpiry: demoEmployee.residentIdExpiry,
-  sponsorName: demoEmployee.sponsorName,
-  sponsorIdNumber: demoEmployee.sponsorIdNumber,
-});
 
 export default function IqamaViewer({
   open,
   onClose,
 }: IqamaViewerProps) {
+  const { employee } = useAuth();
+
+  /*
+   * Get the currently logged-in employee.
+   *
+   * employee = {
+   *   password,
+   *   employee,
+   *   passport,
+   *   hajjDetails
+   * }
+   *
+   * So the actual employee information is:
+   * employee.employee
+   */
+  const currentEmployee = employee?.employee;
+
   const [page, setPage] = useState(0);
   const [seconds, setSeconds] = useState(30);
 
@@ -84,8 +75,64 @@ export default function IqamaViewer({
   const mouseStartX = useRef<number | null>(null);
   const mouseDeltaX = useRef(0);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef =
+    useRef<ReturnType<typeof setInterval> | null>(null);
+
   const secondsRef = useRef(30);
+
+  // ==========================================
+  // DYNAMIC QR DATA
+  // ==========================================
+
+  /*
+   * IMPORTANT:
+   *
+   * This is now generated INSIDE the component
+   * from the currently logged-in employee.
+   *
+   * Therefore:
+   *
+   * JAHAMMED login
+   *     -> JAHAMMED QR data
+   *
+   * MOHAMMAD login
+   *     -> MOHAMMAD QR data
+   *
+   * ABDUL login
+   *     -> ABDUL QR data
+   */
+
+  const formatQrDate = (date: string) => {
+    // Converts DD/MM/YYYY → DDMMYY
+    const [day, month, year] = date.split('/');
+
+    if (!day || !month || !year) {
+      return '';
+    }
+
+    return `${day.padStart(2, '0')}${month.padStart(2, '0')}${year.slice(-2)}`;
+  };
+
+  const qrData = currentEmployee
+    ? JSON.stringify({
+      sig: 'YvzI6hiqdD+gkz9gwziznPncyeJ4CUlACWaV2SEiHFlDbhbjWSFZGA6I+KVS1OWZcBKGE97rjX8V2FLbnEjFH+UZNqn/m3JtJXjwI5NUYOB3saalPFxi9WtKNX+udwNc/zNq9U9emGHs7cYvh/grCrS03No8DrqX+xzs1UnbZOvbEpDkEERineKMfX8Lhsj8be8jXU+CMv9/Wsx5JWbZPxXbArWAlM2XcCMQsfIomb/+M/ncMqLODKptF6gaN9p3Jjfi2mTbpnvtpQYEo/UG24seP+/lu1GnRBlVDM/sFr+DPFjTsD/s4j1Phhtg7ukpxkH+BDW/LRhPei+1QX+lZA==',
+      header: {
+        kid: 121980001,
+      },
+      payload: {
+        iat: Date.now(),
+        cda: `100$ISS:1${JSON.stringify({
+          hid: currentEmployee.residentIdNumber,
+          cnt: {
+            pid: currentEmployee.residentIdNumber,
+          },
+          typ: 3,
+          exp: formatQrDate(currentEmployee.residentIdExpiry),
+          iat: formatQrDate(currentEmployee.residentIdIssueDate),
+        })}`,
+      },
+    })
+    : '';
 
   // ==========================================
   // ORIENTATION
@@ -116,7 +163,7 @@ export default function IqamaViewer({
     return () => {
       ScreenOrientation.lock({
         orientation: 'portrait',
-      }).catch(() => {});
+      }).catch(() => { });
     };
   }, [open]);
 
@@ -159,17 +206,15 @@ export default function IqamaViewer({
     updateSystemBars();
 
     return () => {
-      // Always restore system bars when
-      // component is destroyed
-      StatusBar.show().catch(() => {});
+      StatusBar.show().catch(() => { });
 
       StatusBar.setStyle({
         style: Style.Light,
-      }).catch(() => {});
+      }).catch(() => { });
 
       SystemBars.setImmersive({
         enabled: false,
-      }).catch(() => {});
+      }).catch(() => { });
     };
   }, [open]);
 
@@ -383,6 +428,14 @@ export default function IqamaViewer({
   }
 
   // ==========================================
+  // NO LOGGED-IN EMPLOYEE
+  // ==========================================
+
+  if (!currentEmployee) {
+    return null;
+  }
+
+  // ==========================================
   // VIEWER
   // ==========================================
 
@@ -492,7 +545,7 @@ export default function IqamaViewer({
             "
           >
             <img
-              src={iqamaFront}
+              src={employee.iqamaImage}
               alt="Iqama"
               draggable={false}
               className="

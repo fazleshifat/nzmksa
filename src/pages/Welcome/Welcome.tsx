@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
     IoFingerPrint,
     IoPersonOutline,
@@ -10,7 +11,15 @@ import { SiGoogledocs } from 'react-icons/si';
 
 export default function Welcome() {
     const navigate = useNavigate();
+    const { isAuthenticated, loading } = useAuth();
 
+    if (loading) {
+        return null;
+    }
+
+    if (isAuthenticated) {
+        return <Navigate to="/home" replace />;
+    }
     return (
         <div className="flex min-h-[100dvh] w-full flex-col bg-[#F5F7F6] text-black">
 
