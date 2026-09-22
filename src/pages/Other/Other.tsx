@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import ServiceCard from '../../components/ServiceCard/ServiceCard';
-import { otherServices } from '../../data/demoEmployee';
 import { SearchIcon } from '../../components/icons';
 import NavigationHeader from '../../components/Header/NavigationHeader';
 import { MdModeEdit } from 'react-icons/md';
+import { otherServices } from '../../data/serviceData';
 
 export default function Other() {
   const [query, setQuery] = useState('');

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import {
@@ -13,14 +14,30 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
 
-  const { employee } = useAuth();
+  const { user } = useAuth();
 
-  const e = employee;
+  const e = user;
 
   if (!e) {
     return null;
   }
+
+  const handleCopy = async () => {
+    if (!e.residentIdNumber) return;
+
+    try {
+      await navigator.clipboard.writeText(e.residentIdNumber);
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy resident ID number:', error);
+    }
+  };
 
   return (
     <div className="min-h-full bg-black pb-10">
@@ -59,7 +76,18 @@ export default function Profile() {
               ID No. {e.residentIdNumber}
             </p>
 
-            <CopyIcon width={15} height={15} />
+            <button
+              type="button"
+              onClick={handleCopy}
+              aria-label="Copy resident ID number"
+              className="cursor-pointer text-white/50 transition-colors hover:text-brand-mint"
+            >
+              {copied ? (
+                <CheckIcon />
+              ) : (
+                <CopyIcon width={15} height={15} />
+              )}
+            </button>
           </div>
 
           <button
@@ -172,5 +200,22 @@ function RowTile({
         {label}
       </span>
     </button>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12.5l4 4L19 7" />
+    </svg>
   );
 }

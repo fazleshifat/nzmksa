@@ -49,22 +49,29 @@ export default function IqamaViewer({
   open,
   onClose,
 }: IqamaViewerProps) {
-  const { employee } = useAuth();
+  const { user } = useAuth();
 
   /*
-   * Get the currently logged-in employee.
+   * CURRENT AUTH STRUCTURE
    *
-   * employee = {
-   *   password,
-   *   employee,
-   *   passport,
-   *   hajjDetails
-   * }
+   * employee = the actual logged-in Employee object.
    *
-   * So the actual employee information is:
-   * employee.employee
+   * Data comes from:
+   *
+   * MongoDB
+   *   ↓
+   * Express API
+   *   ↓
+   * AuthContext
+   *   ↓
+   * employee
+   *
+   * Therefore DO NOT use:
+   *
+   * employee?.employee
    */
-  const currentEmployee = employee?.employee;
+
+  const currentEmployee = user;
 
   const [page, setPage] = useState(0);
   const [seconds, setSeconds] = useState(30);
@@ -85,24 +92,17 @@ export default function IqamaViewer({
   // ==========================================
 
   /*
-   * IMPORTANT:
+   * Generate QR data from the currently logged-in
+   * employee.
    *
-   * This is now generated INSIDE the component
-   * from the currently logged-in employee.
-   *
-   * Therefore:
-   *
-   * JAHAMMED login
-   *     -> JAHAMMED QR data
-   *
-   * MOHAMMAD login
-   *     -> MOHAMMAD QR data
-   *
-   * ABDUL login
-   *     -> ABDUL QR data
+   * This means every employee gets their own QR data.
    */
 
-  const formatQrDate = (date: string) => {
+  const formatQrDate = (date?: string) => {
+    if (!date) {
+      return '';
+    }
+
     // Converts DD/MM/YYYY → DDMMYY
     const [day, month, year] = date.split('/');
 
@@ -110,28 +110,39 @@ export default function IqamaViewer({
       return '';
     }
 
-    return `${day.padStart(2, '0')}${month.padStart(2, '0')}${year.slice(-2)}`;
+    return `${day.padStart(2, '0')}${month.padStart(
+      2,
+      '0'
+    )}${year.slice(-2)}`;
   };
 
   const qrData = currentEmployee
     ? JSON.stringify({
-      sig: 'YvzI6hiqdD+gkz9gwziznPncyeJ4CUlACWaV2SEiHFlDbhbjWSFZGA6I+KVS1OWZcBKGE97rjX8V2FLbnEjFH+UZNqn/m3JtJXjwI5NUYOB3saalPFxi9WtKNX+udwNc/zNq9U9emGHs7cYvh/grCrS03No8DrqX+xzs1UnbZOvbEpDkEERineKMfX8Lhsj8be8jXU+CMv9/Wsx5JWbZPxXbArWAlM2XcCMQsfIomb/+M/ncMqLODKptF6gaN9p3Jjfi2mTbpnvtpQYEo/UG24seP+/lu1GnRBlVDM/sFr+DPFjTsD/s4j1Phhtg7ukpxkH+BDW/LRhPei+1QX+lZA==',
-      header: {
-        kid: 121980001,
-      },
-      payload: {
-        iat: Date.now(),
-        cda: `100$ISS:1${JSON.stringify({
-          hid: currentEmployee.residentIdNumber,
-          cnt: {
-            pid: currentEmployee.residentIdNumber,
-          },
-          typ: 3,
-          exp: formatQrDate(currentEmployee.residentIdExpiry),
-          iat: formatQrDate(currentEmployee.residentIdIssueDate),
-        })}`,
-      },
-    })
+        sig: 'YvzI6hiqdD+gkz9gwziznPncyeJ4CUlACWaV2SEiHFlDbhbjWSFZGA6I+KVS1OWZcBKGE97rjX8V2FLbnEjFH+UZNqn/m3JtJXjwI5NUYOB3saalPFxi9WtKNX+udwNc/zNq9U9emGHs7cYvh/grCrS03No8DrqX+xzs1UnbZOvbEpDkEERineKMfX8Lhsj8be8jXU+CMv9/Wsx5JWbZPxXbArWAlM2XcCMQsfIomb/+M/ncMqLODKptF6gaN9p3Jjfi2mTbpnvtpQYEo/UG24seP+/lu1GnRBlVDM/sFr+DPFjTsD/s4j1Phhtg7ukpxkH+BDW/LRhPei+1QX+lZA==',
+        header: {
+          kid: 121980001,
+        },
+        payload: {
+          iat: Date.now(),
+          cda: `100$ISS:1${JSON.stringify({
+            hid: currentEmployee.residentIdNumber,
+
+            cnt: {
+              pid: currentEmployee.residentIdNumber,
+            },
+
+            typ: 3,
+
+            exp: formatQrDate(
+              currentEmployee.residentIdExpiry
+            ),
+
+            iat: formatQrDate(
+              currentEmployee.residentIdIssueDate
+            ),
+          })}`,
+        },
+      })
     : '';
 
   // ==========================================
@@ -163,7 +174,7 @@ export default function IqamaViewer({
     return () => {
       ScreenOrientation.lock({
         orientation: 'portrait',
-      }).catch(() => { });
+      }).catch(() => {});
     };
   }, [open]);
 
@@ -206,15 +217,15 @@ export default function IqamaViewer({
     updateSystemBars();
 
     return () => {
-      StatusBar.show().catch(() => { });
+      StatusBar.show().catch(() => {});
 
       StatusBar.setStyle({
         style: Style.Light,
-      }).catch(() => { });
+      }).catch(() => {});
 
       SystemBars.setImmersive({
         enabled: false,
-      }).catch(() => { });
+      }).catch(() => {});
     };
   }, [open]);
 
@@ -545,7 +556,7 @@ export default function IqamaViewer({
             "
           >
             <img
-              src={employee.iqamaImage}
+              src={currentEmployee.iqamaImage}
               alt="Iqama"
               draggable={false}
               className="

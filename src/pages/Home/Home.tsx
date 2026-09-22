@@ -14,9 +14,9 @@ export default function Home() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const navigate = useNavigate();
 
-  const { employee } = useAuth();
+  const { user } = useAuth();
 
-  const e = employee;
+  const e = user;
 
   if (!e) {
     return null;
@@ -92,9 +92,9 @@ export default function Home() {
             aria-label="Open Resident ID document viewer"
           >
             <img
-              src={employee?.iqamaImage}
-              alt="Resident ID"
-              className="w-full object-contain"
+              src={user?.iqamaImage}
+              alt="Iqama ID"
+              className="w-full min-h-30 object-contain"
             />
           </button>
         </div>

@@ -6,9 +6,9 @@ import { CloseIcon, ChevronRight } from '../../components/icons';
 export default function Settings() {
   const navigate = useNavigate();
 
-  const { logout, employee } = useAuth();
+  const { logout, user } = useAuth();
 
-  const e = employee;
+  const e = user;
 
   const [biometrics, setBiometrics] = useState(true);
   const [blurImages, setBlurImages] = useState(false);

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { Preferences } from '@capacitor/preferences';
+
 import { useAuth } from '../../context/AuthContext';
 
 import { ChevronLeft } from '../../components/icons';
-
 
 export default function Login() {
   const [idNumber, setIdNumber] = useState('');
@@ -18,11 +19,9 @@ export default function Login() {
   const [isLoggingIn, setIsLoggingIn] =
     useState(false);
 
-
   const { login } = useAuth();
 
   const navigate = useNavigate();
-
 
   // ==========================================================================
   // LOGIN
@@ -33,18 +32,13 @@ export default function Login() {
   ) => {
     e.preventDefault();
 
-    // Clear previous error
     setError('');
 
-
-    // Prevent duplicate clicks
     if (isLoggingIn) {
       return;
     }
 
-
     setIsLoggingIn(true);
-
 
     try {
       const success = await login(
@@ -52,15 +46,45 @@ export default function Login() {
         password
       );
 
-
       if (success) {
+        // ---------------------------------------------------------------
+        // Read account role saved by AuthContext
+        // ---------------------------------------------------------------
+
+        const roleResult =
+          await Preferences.get({
+            key: 'absher_role',
+          });
+
+        const role = roleResult.value;
+
+        console.log(
+          'ABSher: Login role:',
+          role
+        );
+
+        // ---------------------------------------------------------------
+        // Admin
+        // ---------------------------------------------------------------
+
+        if (role === 'admin') {
+          navigate('/admin', {
+            replace: true,
+          });
+
+          return;
+        }
+
+        // ---------------------------------------------------------------
+        // Normal user
+        // ---------------------------------------------------------------
+
         navigate('/home', {
           replace: true,
         });
 
         return;
       }
-
 
       setError(
         'Incorrect ID number or password.'
@@ -80,7 +104,6 @@ export default function Login() {
       setIsLoggingIn(false);
     }
   };
-
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-[#F4F8F6] px-4 pt-6 pb-4">
@@ -105,7 +128,6 @@ export default function Login() {
         />
       </button>
 
-
       {/* ================================================================== */}
       {/* Logo + Title */}
       {/* ================================================================== */}
@@ -128,13 +150,11 @@ export default function Login() {
 
         </div>
 
-
         <p className="mt-10 text-2xl font-bold tracking-tight text-black">
           Log In to Absher
         </p>
 
       </div>
-
 
       {/* ================================================================== */}
       {/* Form */}
@@ -155,7 +175,6 @@ export default function Login() {
             Username or ID Number
           </label>
 
-
           <input
             value={idNumber}
 
@@ -164,7 +183,7 @@ export default function Login() {
               setError('');
             }}
 
-            inputMode="numeric"
+            inputMode="text"
 
             autoComplete="username"
 
@@ -177,7 +196,6 @@ export default function Login() {
 
         </div>
 
-
         {/* ================================================================ */}
         {/* Password */}
         {/* ================================================================ */}
@@ -187,7 +205,6 @@ export default function Login() {
           <label className="mb-2 block text-[13px] font-semibold text-black/60">
             Password
           </label>
-
 
           <input
             value={password}
@@ -209,7 +226,6 @@ export default function Login() {
           />
 
         </div>
-
 
         {/* ================================================================ */}
         {/* Keep Logged In */}
@@ -252,13 +268,11 @@ export default function Login() {
 
           </span>
 
-
           <span className="text-[14px] font-medium text-black/70">
             Keep me logged in
           </span>
 
         </button>
-
 
         {/* ================================================================ */}
         {/* Error */}
@@ -269,7 +283,6 @@ export default function Login() {
             {error}
           </p>
         )}
-
 
         {/* ================================================================ */}
         {/* Bottom Actions */}
@@ -288,7 +301,6 @@ export default function Login() {
               ? 'Logging In...'
               : 'Log In'}
           </button>
-
 
           <button
             type="button"

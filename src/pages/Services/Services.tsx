@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import ServiceCard from '../../components/ServiceCard/ServiceCard';
-import { myServices } from '../../data/demoEmployee';
 import { SearchIcon } from '../../components/icons';
 import NavigationHeader from '../../components/Header/NavigationHeader';
+import { myServices } from '../../data/serviceData';
 
 export default function Services() {
   const [query, setQuery] = useState('');

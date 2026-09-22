@@ -12,6 +12,8 @@ import { Preferences } from '@capacitor/preferences';
 import {
   apiFetch,
   type Employee,
+  type Admin,
+  type AccountRole,
   type LoginResponse,
   type MeResponse,
 } from '../api/api';
@@ -23,10 +25,14 @@ import {
 interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
-  employee: Employee | null;
+
+  user: Employee | null;
+  admin: Admin | null;
+
+  role: AccountRole | null;
 
   login: (
-    idNumber: string,
+    idNumberOrEmail: string,
     password: string
   ) => Promise<boolean>;
 
@@ -46,8 +52,9 @@ const AuthContext = createContext<AuthContextValue | undefined>(
 // ============================================================================
 
 const TOKEN_KEY = 'absher_token';
-const EMPLOYEE_KEY = 'absher_employee_id';
+const USER_KEY = 'absher_user_id';
 const LOGIN_TIME_KEY = 'absher_login_time';
+const ROLE_KEY = 'absher_role';
 
 // ============================================================================
 // SESSION DURATION
@@ -64,8 +71,11 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
-  const [employee, setEmployee] =
-    useState<Employee | null>(null);
+  const [user, setUser] = useState<Employee | null>(null);
+
+  const [admin, setAdmin] = useState<Admin | null>(null);
+
+  const [role, setRole] = useState<AccountRole | null>(null);
 
   const [isAuthenticated, setIsAuthenticated] =
     useState(false);
@@ -83,7 +93,6 @@ export function AuthProvider({
       'appStateChange',
       ({ isActive }) => {
         if (isActive) {
-          console.log('ABSher: App resumed');
           restoreSession();
         }
       }
@@ -102,40 +111,15 @@ export function AuthProvider({
 
   const restoreSession = async () => {
     try {
-      console.log('ABSher: Restoring session...');
+      // ----------------------------------------------------------------------
+      // Get saved token
+      // ----------------------------------------------------------------------
 
       const tokenResult = await Preferences.get({
         key: TOKEN_KEY,
       });
 
       const savedToken = tokenResult.value;
-
-      const employeeResult = await Preferences.get({
-        key: EMPLOYEE_KEY,
-      });
-
-      const savedEmployeeId = employeeResult.value;
-
-      const loginTimeResult = await Preferences.get({
-        key: LOGIN_TIME_KEY,
-      });
-
-      const savedLoginTime = loginTimeResult.value;
-
-      console.log(
-        'ABSher: Saved employee ID:',
-        savedEmployeeId
-      );
-
-      console.log(
-        'ABSher: Saved login time:',
-        savedLoginTime
-      );
-
-      console.log(
-        'ABSher: Token exists:',
-        Boolean(savedToken)
-      );
 
       // ----------------------------------------------------------------------
       // No saved token
@@ -146,11 +130,23 @@ export function AuthProvider({
           'ABSher: No saved authentication token'
         );
 
-        setEmployee(null);
+        setUser(null);
+        setAdmin(null);
+        setRole(null);
         setIsAuthenticated(false);
 
         return;
       }
+
+      // ----------------------------------------------------------------------
+      // Get saved login time
+      // ----------------------------------------------------------------------
+
+      const loginTimeResult = await Preferences.get({
+        key: LOGIN_TIME_KEY,
+      });
+
+      const savedLoginTime = loginTimeResult.value;
 
       // ----------------------------------------------------------------------
       // Check local session age
@@ -166,7 +162,9 @@ export function AuthProvider({
 
           await clearStoredSession();
 
-          setEmployee(null);
+          setUser(null);
+          setAdmin(null);
+          setRole(null);
           setIsAuthenticated(false);
 
           return;
@@ -194,7 +192,9 @@ export function AuthProvider({
 
           await clearStoredSession();
 
-          setEmployee(null);
+          setUser(null);
+          setAdmin(null);
+          setRole(null);
           setIsAuthenticated(false);
 
           return;
@@ -213,23 +213,67 @@ export function AuthProvider({
         '/api/auth/me'
       );
 
-      if (!response.employee) {
-        throw new Error(
-          'Employee data missing from session response'
+      // ----------------------------------------------------------------------
+      // Restore admin session
+      // ----------------------------------------------------------------------
+
+      if (
+        response.role === 'admin' &&
+        response.admin
+      ) {
+        console.log(
+          'ABSher: Admin session restored for:',
+          response.admin.email
         );
+
+        // Make sure role is also persisted
+        await Preferences.set({
+          key: ROLE_KEY,
+          value: 'admin',
+        });
+
+        setUser(null);
+        setAdmin(response.admin);
+        setRole('admin');
+        setIsAuthenticated(true);
+
+        return;
       }
 
       // ----------------------------------------------------------------------
-      // Session valid
+      // Restore normal user session
       // ----------------------------------------------------------------------
 
-      console.log(
-        'ABSher: Session restored for:',
-        response.employee.name
-      );
+      if (
+        response.role === 'user' &&
+        response.user
+      ) {
+        console.log(
+          'ABSher: User session restored for:',
+          response.user.name
+        );
 
-      setEmployee(response.employee);
-      setIsAuthenticated(true);
+        // Make sure role is also persisted
+        await Preferences.set({
+          key: ROLE_KEY,
+          value: 'user',
+        });
+
+        setAdmin(null);
+        setUser(response.user);
+        setRole('user');
+        setIsAuthenticated(true);
+
+        return;
+      }
+
+      // ----------------------------------------------------------------------
+      // Invalid session response
+      // ----------------------------------------------------------------------
+
+      throw new Error(
+        'Invalid session response'
+      );
 
     } catch (error) {
       console.error(
@@ -239,7 +283,9 @@ export function AuthProvider({
 
       await clearStoredSession();
 
-      setEmployee(null);
+      setUser(null);
+      setAdmin(null);
+      setRole(null);
       setIsAuthenticated(false);
 
     } finally {
@@ -252,40 +298,41 @@ export function AuthProvider({
   // ==========================================================================
 
   const login = async (
-    idNumber: string,
+    idNumberOrEmail: string,
     password: string
   ): Promise<boolean> => {
     try {
       console.log(
         'ABSher: Logging in:',
-        idNumber
+        idNumberOrEmail
       );
 
       // ----------------------------------------------------------------------
       // Backend login
       // ----------------------------------------------------------------------
 
-      const response = await apiFetch<LoginResponse>(
-        '/api/auth/login',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            residentIdNumber: idNumber.trim(),
-            password,
-          }),
-        }
-      );
+      const response =
+        await apiFetch<LoginResponse>(
+          '/api/auth/login',
+          {
+            method: 'POST',
+
+            body: JSON.stringify({
+              residentIdNumber:
+                idNumberOrEmail.trim(),
+
+              password,
+            }),
+          }
+        );
 
       // ----------------------------------------------------------------------
-      // Validate response
+      // Validate token
       // ----------------------------------------------------------------------
 
-      if (
-        !response.token ||
-        !response.employee
-      ) {
+      if (!response.token) {
         console.error(
-          'ABSher: Invalid login response'
+          'ABSher: Login token missing'
         );
 
         return false;
@@ -301,12 +348,27 @@ export function AuthProvider({
       });
 
       // ----------------------------------------------------------------------
-      // Save employee ID
+      // Save account identifier
       // ----------------------------------------------------------------------
 
+      const accountIdentifier =
+        response.role === 'admin'
+          ? response.admin?.email
+          : response.user?.residentIdNumber;
+
+      if (!accountIdentifier) {
+        console.error(
+          'ABSher: Account identifier missing'
+        );
+
+        await clearStoredSession();
+
+        return false;
+      }
+
       await Preferences.set({
-        key: EMPLOYEE_KEY,
-        value: response.employee.residentIdNumber,
+        key: USER_KEY,
+        value: accountIdentifier,
       });
 
       // ----------------------------------------------------------------------
@@ -319,46 +381,80 @@ export function AuthProvider({
       });
 
       // ----------------------------------------------------------------------
-      // Verify storage
+      // Admin login
       // ----------------------------------------------------------------------
 
-      const verifyToken =
-        await Preferences.get({
-          key: TOKEN_KEY,
+      if (
+        response.role === 'admin' &&
+        response.admin
+      ) {
+        console.log(
+          'ABSher: Admin login successful:',
+          response.admin.email
+        );
+
+        // IMPORTANT:
+        // Save admin role for Login.tsx / app startup routing
+        await Preferences.set({
+          key: ROLE_KEY,
+          value: 'admin',
         });
 
-      const verifyEmployee =
-        await Preferences.get({
-          key: EMPLOYEE_KEY,
+        console.log(
+          'ABSher: Saved role: admin'
+        );
+
+        setUser(null);
+        setAdmin(response.admin);
+        setRole('admin');
+        setIsAuthenticated(true);
+
+        return true;
+      }
+
+      // ----------------------------------------------------------------------
+      // User login
+      // ----------------------------------------------------------------------
+
+      if (
+        response.role === 'user' &&
+        response.user
+      ) {
+        console.log(
+          'ABSher: User login successful:',
+          response.user.name
+        );
+
+        // IMPORTANT:
+        // Save user role for Login.tsx / app startup routing
+        await Preferences.set({
+          key: ROLE_KEY,
+          value: 'user',
         });
 
-      const verifyLoginTime =
-        await Preferences.get({
-          key: LOGIN_TIME_KEY,
-        });
+        console.log(
+          'ABSher: Saved role: user'
+        );
 
-      console.log(
-        'ABSher: Login saved:',
-        {
-          token: Boolean(verifyToken.value),
-          employee: verifyEmployee.value,
-          loginTime: verifyLoginTime.value,
-        }
+        setAdmin(null);
+        setUser(response.user);
+        setRole('user');
+        setIsAuthenticated(true);
+
+        return true;
+      }
+
+      // ----------------------------------------------------------------------
+      // Invalid account response
+      // ----------------------------------------------------------------------
+
+      console.error(
+        'ABSher: Invalid login response'
       );
 
-      // ----------------------------------------------------------------------
-      // Update application state
-      // ----------------------------------------------------------------------
+      await clearStoredSession();
 
-      setEmployee(response.employee);
-      setIsAuthenticated(true);
-
-      console.log(
-        'ABSher: Login successful for:',
-        response.employee.name
-      );
-
-      return true;
+      return false;
 
     } catch (error) {
       console.error(
@@ -381,7 +477,9 @@ export function AuthProvider({
 
     await clearStoredSession();
 
-    setEmployee(null);
+    setUser(null);
+    setAdmin(null);
+    setRole(null);
     setIsAuthenticated(false);
   };
 
@@ -395,15 +493,16 @@ export function AuthProvider({
     });
 
     await Preferences.remove({
-      key: EMPLOYEE_KEY,
+      key: USER_KEY,
     });
 
     await Preferences.remove({
       key: LOGIN_TIME_KEY,
     });
 
-    // Keep localStorage clean too
-    // localStorage.removeItem(TOKEN_KEY);
+    await Preferences.remove({
+      key: ROLE_KEY,
+    });
 
     console.log(
       'ABSher: Stored session cleared'
@@ -418,7 +517,9 @@ export function AuthProvider({
     <AuthContext.Provider
       value={{
         isAuthenticated,
-        employee,
+        user,
+        admin,
+        role,
         login,
         logout,
         loading,
