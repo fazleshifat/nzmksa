@@ -1,6 +1,14 @@
 {
     "rewrites": [
         {
+            "source": "/",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/index.html"
+        },
+        {
             "source": "/home",
             "destination": "/index.html"
         },
@@ -26,6 +34,10 @@
         },
         {
             "source": "/settings/:path*",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/admin/:path*",
             "destination": "/index.html"
         }
     ]
