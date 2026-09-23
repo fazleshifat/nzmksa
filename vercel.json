@@ -1,7 +1,27 @@
 {
     "rewrites": [
         {
-            "source": "/((?!assets/).*)",
+            "source": "/profile/:path*",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/services/:path*",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/family/:path*",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/workers/:path*",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/other/:path*",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/settings/:path*",
             "destination": "/index.html"
         }
     ]
