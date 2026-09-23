@@ -38,14 +38,15 @@ function AppRoutes() {
   useAndroidBackButton();
 
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute =
+    location.pathname.startsWith('/admin');
 
   return (
     <div
       className={
         isAdminRoute
           ? 'min-h-[100dvh] w-full bg-gray-50 font-sans!'
-          : 'mx-auto min-h-[100dvh] w-full max-w-md bg-black font-sans!'
+          : 'relative mx-auto min-h-[100dvh] w-full max-w-md bg-black font-sans!'
       }
     >
       <Routes>
@@ -85,14 +86,20 @@ function AppRoutes() {
             element={<PersonalDetails />}
           />
 
-          <Route path="/profile/passport" element={<Passport />} />
+          <Route
+            path="/profile/passport"
+            element={<Passport />}
+          />
 
           <Route
             path="/profile/resident-id"
             element={<ResidentId />}
           />
 
-          <Route path="/profile/visa" element={<Visa />} />
+          <Route
+            path="/profile/visa"
+            element={<Visa />}
+          />
 
           <Route
             path="/profile/driving-license"
@@ -109,7 +116,10 @@ function AppRoutes() {
             element={<TravelRecord />}
           />
 
-          <Route path="/settings" element={<Settings />} />
+          <Route
+            path="/settings"
+            element={<Settings />}
+          />
         </Route>
 
         <Route
@@ -117,6 +127,9 @@ function AppRoutes() {
           element={<Navigate to="/" replace />}
         />
       </Routes>
+
+      {/* Global user chat button */}
+      {/* <FloatingChatButton /> */}
     </div>
   );
 }

@@ -89,6 +89,7 @@ export default function PersonalDetails() {
             <DetailRow
               label="Sponsor Name"
               value={e.sponsorName}
+              copyable
             />
 
             <DetailRow
@@ -145,6 +146,9 @@ export default function PersonalDetails() {
   );
 }
 
+/*
+ * Sponsor icon
+ */
 function PersonOutline() {
   return (
     <svg
@@ -166,6 +170,9 @@ function PersonOutline() {
   );
 }
 
+/*
+ * Health insurance icon
+ */
 function MoonOutline() {
   return (
     <svg
