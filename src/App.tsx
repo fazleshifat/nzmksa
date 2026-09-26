@@ -33,6 +33,7 @@ import Welcome from './pages/Welcome/Welcome';
 import Admin from './pages/Admin/Admin';
 import EditUser from './pages/Admin/EditUser';
 import ViewUser from './pages/Admin/ViewUser';
+import CreateUser from './pages/Admin/CreateUser';
 
 function AppRoutes() {
   useAndroidBackButton();
@@ -66,6 +67,11 @@ function AppRoutes() {
           <Route
             path="/admin/users/:id/edit"
             element={<EditUser />}
+          />
+
+          <Route
+            path="/admin/users/create"
+            element={<CreateUser />}
           />
         </Route>
 
