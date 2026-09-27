@@ -30,7 +30,7 @@ const links = [
     label: "All Admin",
     description: "All Admin profile",
     icon: ShieldCheck,
-    to: "/admin/all-profile",
+    to: "/admin/all-admin",
   },
 ];
 

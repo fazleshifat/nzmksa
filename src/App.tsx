@@ -34,6 +34,8 @@ import Admin from './pages/Admin/Admin';
 import EditUser from './pages/Admin/EditUser';
 import ViewUser from './pages/Admin/ViewUser';
 import CreateUser from './pages/Admin/CreateUser';
+import AllIqama from './pages/Admin/AllIqama';
+import AllAdmins from './pages/Admin/AllAdmin';
 
 function AppRoutes() {
   useAndroidBackButton();
@@ -58,6 +60,8 @@ function AppRoutes() {
         {/* Admin routes */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/all-iqama" element={<AllIqama />} />
+          <Route path="/admin/all-admin" element={<AllAdmins />} />
 
           <Route
             path="/admin/users/:id"
