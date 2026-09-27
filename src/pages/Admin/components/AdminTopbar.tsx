@@ -4,7 +4,6 @@ import {
   ChevronDown,
   UserRound,
   LogOut,
-  ShieldCheck,
 } from "lucide-react";
 
 interface Props {
