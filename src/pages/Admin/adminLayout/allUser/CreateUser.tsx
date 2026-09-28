@@ -25,12 +25,7 @@ import {
     AlertCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-import {
-    apiFetch,
-    apiUpload,
-    type Employee,
-} from "../../api/api";
+import { apiFetch, apiUpload, type Employee } from "../../../../api/api";
 
 interface FormData {
     name: string;

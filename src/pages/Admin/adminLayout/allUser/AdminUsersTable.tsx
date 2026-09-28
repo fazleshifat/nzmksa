@@ -11,7 +11,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import type { Employee } from "../../../api/api";
+import type { Employee } from "../../../../api/api";
 
 interface Props {
   users: Employee[];

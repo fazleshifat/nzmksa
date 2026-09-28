@@ -6,11 +6,7 @@ import type {
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import {
-    apiFetch,
-    apiUpload,
-    type Employee,
-} from '../../api/api';
+import { apiFetch, apiUpload, type Employee } from "../../../../api/api";
 
 interface UserResponse {
     user: Employee;
@@ -157,8 +153,8 @@ export default function EditUser() {
                     sponsorshipTransfers:
                         loadedUser.sponsorshipTransfers != null
                             ? String(
-                                  loadedUser.sponsorshipTransfers
-                              )
+                                loadedUser.sponsorshipTransfers
+                            )
                             : '',
 
                     religion: String(
@@ -291,96 +287,96 @@ export default function EditUser() {
 
         return (
             form.name.trim() !==
-                String(user.name || '') ||
+            String(user.name || '') ||
             form.residentIdNumber.trim() !==
-                String(user.residentIdNumber || '') ||
+            String(user.residentIdNumber || '') ||
             form.idVersion.trim() !==
-                String(user.idVersion || '') ||
+            String(user.idVersion || '') ||
             form.nationality.trim() !==
-                String(user.nationality || '') ||
+            String(user.nationality || '') ||
             form.birthCity.trim() !==
-                String(user.birthCity || '') ||
+            String(user.birthCity || '') ||
             form.birthCountry.trim() !==
-                String(user.birthCountry || '') ||
+            String(user.birthCountry || '') ||
             form.dateOfBirth.trim() !==
-                String(user.dateOfBirth || '') ||
+            String(user.dateOfBirth || '') ||
             form.maritalStatus.trim() !==
-                String(user.maritalStatus || '') ||
+            String(user.maritalStatus || '') ||
             form.religion.trim() !==
-                String(user.religion || '') ||
+            String(user.religion || '') ||
             form.sponsorshipTransfers !==
-                (user.sponsorshipTransfers != null
-                    ? String(
-                          user.sponsorshipTransfers
-                      )
-                    : '') ||
+            (user.sponsorshipTransfers != null
+                ? String(
+                    user.sponsorshipTransfers
+                )
+                : '') ||
             form.occupation.trim() !==
-                String(user.occupation || '') ||
+            String(user.occupation || '') ||
             form.employer.trim() !==
-                String(user.employer || '') ||
+            String(user.employer || '') ||
             form.employerIdNumber.trim() !==
-                String(user.employerIdNumber || '') ||
+            String(user.employerIdNumber || '') ||
             form.issuePlace.trim() !==
-                String(user.issuePlace || '') ||
+            String(user.issuePlace || '') ||
             form.workPermit.trim() !==
-                String(user.workPermit || '') ||
+            String(user.workPermit || '') ||
             form.residentIdIssueDate.trim() !==
-                String(
-                    user.residentIdIssueDate || ''
-                ) ||
+            String(
+                user.residentIdIssueDate || ''
+            ) ||
             form.residentIdExpiry.trim() !==
-                String(
-                    user.residentIdExpiry || ''
-                ) ||
+            String(
+                user.residentIdExpiry || ''
+            ) ||
             form.sponsorName.trim() !==
-                String(user.sponsorName || '') ||
+            String(user.sponsorName || '') ||
             form.sponsorIdNumber.trim() !==
-                String(user.sponsorIdNumber || '') ||
+            String(user.sponsorIdNumber || '') ||
             form.active !==
-                (user.active !== false) ||
+            (user.active !== false) ||
             form.passportNumber.trim() !==
-                String(
-                    user.passport?.passportNumber ||
-                        ''
-                ) ||
+            String(
+                user.passport?.passportNumber ||
+                ''
+            ) ||
             form.passportType.trim() !==
-                String(
-                    user.passport?.type || ''
-                ) ||
+            String(
+                user.passport?.type || ''
+            ) ||
             form.passportIssuingDate.trim() !==
-                String(
-                    user.passport?.issuingDate ||
-                        ''
-                ) ||
+            String(
+                user.passport?.issuingDate ||
+                ''
+            ) ||
             form.passportExpiryDate.trim() !==
-                String(
-                    user.passport?.expiryDate ||
-                        ''
-                ) ||
+            String(
+                user.passport?.expiryDate ||
+                ''
+            ) ||
             form.passportIssuingCity.trim() !==
-                String(
-                    user.passport?.issuingCity ||
-                        ''
-                ) ||
+            String(
+                user.passport?.issuingCity ||
+                ''
+            ) ||
             form.passportStatus.trim() !==
-                String(
-                    user.passport?.status || ''
-                ) ||
+            String(
+                user.passport?.status || ''
+            ) ||
             form.passportAmountDeposit.trim() !==
-                String(
-                    user.passport
-                        ?.amountDeposit || ''
-                ) ||
+            String(
+                user.passport
+                    ?.amountDeposit || ''
+            ) ||
             form.hajjStatus.trim() !==
-                String(
-                    user.hajjDetails?.status ||
-                        ''
-                ) ||
+            String(
+                user.hajjDetails?.status ||
+                ''
+            ) ||
             form.lastHajjYear.trim() !==
-                String(
-                    user.hajjDetails?.lastHajjYear ||
-                        ''
-                ) ||
+            String(
+                user.hajjDetails?.lastHajjYear ||
+                ''
+            ) ||
             avatarFile !== null ||
             iqamaFile !== null
         );
@@ -542,8 +538,8 @@ export default function EditUser() {
                     form.sponsorshipTransfers === ''
                         ? undefined
                         : Number(
-                              form.sponsorshipTransfers
-                          ),
+                            form.sponsorshipTransfers
+                        ),
 
                 religion:
                     form.religion.trim(),
@@ -673,12 +669,12 @@ export default function EditUser() {
             setUser((current) =>
                 current
                     ? {
-                          ...current,
-                          avatarUrl:
-                              latestAvatarUrl,
-                          iqamaImage:
-                              latestIqamaUrl,
-                      }
+                        ...current,
+                        avatarUrl:
+                            latestAvatarUrl,
+                        iqamaImage:
+                            latestIqamaUrl,
+                    }
                     : current
             );
 
@@ -832,9 +828,7 @@ export default function EditUser() {
                     <div className="flex min-w-0 items-center gap-3">
                         <button
                             type="button"
-                            onClick={() =>
-                                navigate('/admin')
-                            }
+                            onClick={() => navigate(-1)}
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F4F8F6] text-lg font-black transition hover:bg-[#EAF5F0] active:scale-95"
                         >
                             ←
@@ -853,11 +847,10 @@ export default function EditUser() {
 
                     <div className="hidden items-center gap-2 rounded-full bg-[#EAF5F0] px-4 py-2 sm:flex">
                         <span
-                            className={`h-2 w-2 rounded-full ${
-                                form.active
+                            className={`h-2 w-2 rounded-full ${form.active
                                     ? 'bg-brand-green'
                                     : 'bg-black/20'
-                            }`}
+                                }`}
                         />
 
                         <span className="text-xs font-bold text-black/55">
@@ -976,7 +969,7 @@ export default function EditUser() {
                                             <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-[#EAF5F0] text-3xl font-black text-brand-green ring-4 ring-white">
                                                 {String(
                                                     user.name ||
-                                                        'U'
+                                                    'U'
                                                 )
                                                     .trim()
                                                     .charAt(
@@ -1574,7 +1567,7 @@ export default function EditUser() {
                                     className="flex h-12 flex-[1.5] items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 text-sm font-black text-white shadow-[0_8px_22px_rgba(25,118,83,0.22)] transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:min-w-[190px]"
                                 >
                                     {saving ||
-                                    uploadingImage ? (
+                                        uploadingImage ? (
                                         <>
                                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
 
@@ -1742,18 +1735,16 @@ function Toggle({
                 onClick={() =>
                     onChange(!checked)
                 }
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-                    checked
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked
                         ? 'bg-brand-green'
                         : 'bg-black/15'
-                }`}
+                    }`}
             >
                 <span
-                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${
-                        checked
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${checked
                             ? 'left-6'
                             : 'left-1'
-                    }`}
+                        }`}
                 />
             </button>
         </div>

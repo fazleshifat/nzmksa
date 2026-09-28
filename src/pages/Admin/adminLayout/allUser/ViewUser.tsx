@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import {
-    apiFetch,
-    type Employee,
-} from '../../api/api';
+import { apiFetch, type Employee } from "../../../../api/api";
 
 interface UserResponse {
     user: Employee;
@@ -85,7 +82,7 @@ export default function ViewUser() {
             <div className="min-h-[100dvh] bg-[#F5F8F6] px-4 py-6 sm:px-6 lg:px-8">
                 <button
                     type="button"
-                    onClick={() => navigate('/admin')}
+                    onClick={() => navigate(-1)}
                     className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-black shadow-sm ring-1 ring-black/5 transition hover:bg-black/[0.02]"
                 >
                     <ArrowLeftIcon />
@@ -131,7 +128,7 @@ export default function ViewUser() {
 
                         <button
                             type="button"
-                            onClick={() => navigate('/admin')}
+                            onClick={() => navigate(-1)}
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F3F6F4] text-black/70 transition hover:bg-[#E7F1EC] hover:text-black"
                             aria-label="Back to dashboard"
                         >
@@ -222,11 +219,10 @@ export default function ViewUser() {
                                     )}
 
                                     <span
-                                        className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-white ${
-                                            user.active === false
-                                                ? 'bg-red-500'
-                                                : 'bg-emerald-500'
-                                        }`}
+                                        className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-white ${user.active === false
+                                            ? 'bg-red-500'
+                                            : 'bg-emerald-500'
+                                            }`}
                                     />
 
                                 </div>
@@ -243,18 +239,16 @@ export default function ViewUser() {
                                         </h2>
 
                                         <span
-                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${
-                                                user.active === false
-                                                    ? 'bg-red-50 text-red-600'
-                                                    : 'bg-emerald-50 text-emerald-700'
-                                            }`}
+                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${user.active === false
+                                                ? 'bg-red-50 text-red-600'
+                                                : 'bg-emerald-50 text-emerald-700'
+                                                }`}
                                         >
                                             <span
-                                                className={`h-1.5 w-1.5 rounded-full ${
-                                                    user.active === false
-                                                        ? 'bg-red-500'
-                                                        : 'bg-emerald-500'
-                                                }`}
+                                                className={`h-1.5 w-1.5 rounded-full ${user.active === false
+                                                    ? 'bg-red-500'
+                                                    : 'bg-emerald-500'
+                                                    }`}
                                             />
 
                                             {user.active === false
@@ -272,7 +266,7 @@ export default function ViewUser() {
                                             <span className="font-mono font-bold">
                                                 {String(
                                                     user.residentIdNumber ||
-                                                        '—'
+                                                    '—'
                                                 )}
                                             </span>
                                         </div>
@@ -837,11 +831,10 @@ function InfoGrid({
                         </p>
 
                         <p
-                            className={`mt-1.5 break-words text-[13px] font-bold text-black/75 ${
-                                mono
-                                    ? 'font-mono tracking-tight'
-                                    : ''
-                            }`}
+                            className={`mt-1.5 break-words text-[13px] font-bold text-black/75 ${mono
+                                ? 'font-mono tracking-tight'
+                                : ''
+                                }`}
                         >
                             {formatValue(value)}
                         </p>
@@ -927,19 +920,17 @@ function StatusRow({
             </span>
 
             <span
-                className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide ${
-                    active
-                        ? 'text-emerald-600'
-                        : 'text-red-500'
-                }`}
+                className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide ${active
+                    ? 'text-emerald-600'
+                    : 'text-red-500'
+                    }`}
             >
 
                 <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                        active
-                            ? 'bg-emerald-500'
-                            : 'bg-red-500'
-                    }`}
+                    className={`h-1.5 w-1.5 rounded-full ${active
+                        ? 'bg-emerald-500'
+                        : 'bg-red-500'
+                        }`}
                 />
 
                 {value}
