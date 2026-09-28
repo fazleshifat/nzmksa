@@ -128,8 +128,8 @@ export default function Admin() {
     filteredUsers.length === 0
       ? 0
       : (currentPage - 1) *
-          USERS_PER_PAGE +
-        1;
+      USERS_PER_PAGE +
+      1;
 
   const lastItem = Math.min(
     currentPage * USERS_PER_PAGE,
@@ -191,31 +191,43 @@ export default function Admin() {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+      <main className="mx-auto w-full max-w-[1700px] px-2 py-2 sm:px-3 lg:px-4 lg:py-3">
 
-        {/* HEADER */}
-        <div className="mb-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">
-            Overview
-          </p>
+        {/* OVERVIEW + STATS */}
+        <section className="overflow-hidden rounded-[28px] border border-brand-green/10 bg-white shadow-[0_8px_30px_rgba(25,118,83,0.05)]">
 
-          <h1 className="mt-1.5 text-2xl font-black tracking-tight sm:text-3xl">
-            Employee Management
-          </h1>
+          {/* OVERVIEW HEADER */}
+          <div className="px-5 pt-6 sm:px-7 sm:pt-7 lg:px-8 lg:pt-8">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-green" />
 
-          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-black/45">
-            Manage employee accounts, Iqama information
-            and account access from one place.
-          </p>
-        </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">
+                  Overview
+                </p>
+              </div>
 
-        {/* STATS */}
-        <AdminStats
-          totalUsers={totalUsers}
-          activeUsers={activeUsers}
-          inactiveUsers={inactiveUsers}
-          loading={loadingUsers}
-        />
+              <h1 className="text-2xl font-black tracking-tight text-black sm:text-3xl">
+                Employee Management
+              </h1>
+
+              <p className="max-w-2xl text-sm leading-6 text-black/45">
+                Manage employee accounts, Iqama information
+                and account access from one place.
+              </p>
+            </div>
+          </div>
+
+          {/* STATS */}
+          <div className="px-2 pb-3 pt-5 sm:px-3 sm:pb-3 lg:px-4 lg:pb-4">
+            <AdminStats
+              totalUsers={totalUsers}
+              activeUsers={activeUsers}
+              inactiveUsers={inactiveUsers}
+              loading={loadingUsers}
+            />
+          </div>
+        </section>
 
         {/* USERS TABLE */}
         <div className="mt-6">

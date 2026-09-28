@@ -60,7 +60,7 @@ function StatCard({
   iconClass: string;
 }) {
   return (
-    <div className="group rounded-[26px] border border-black/[0.04] bg-white p-5 shadow-[0_10px_35px_rgba(0,0,0,0.035)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_40px_rgba(0,0,0,0.055)]">
+    <div className="group rounded-[26px] border border-black/[0.04] p-5 shadow-[0_30px_35px_rgba(0,1,0,0.035)] transition hover:-translate-y-0.5 hover:shadow-[0_15px_40px_rgba(0,0,0,0.055)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.13em] text-black/35">

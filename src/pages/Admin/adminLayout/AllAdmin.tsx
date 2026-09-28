@@ -338,7 +338,7 @@ export default function AllAdmins() {
 
     if (loading) {
         return (
-            <section className="min-h-full w-full bg-[#F3F7F5] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+            <section className="min-h-full w-full bg-[#F3F7F5] px-3 py-5 sm:px-6 lg:px-4 lg:py-3">
                 <div className="w-full">
                     <div className="animate-pulse space-y-6">
                         <div className="h-32 rounded-[28px] bg-white" />
@@ -399,8 +399,8 @@ export default function AllAdmins() {
     }
 
     return (
-        <section className="min-h-full w-full bg-[#F3F7F5] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-            <div className="w-full space-y-6">
+        <section className="min-h-full w-full bg-[#F3F7F5] px-2 py-3 sm:px-3 lg:px-3 lg:py-3">
+            <div className="w-full space-y-3">
 
                 {/* =========================================================
                     HEADER

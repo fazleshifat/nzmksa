@@ -39,8 +39,7 @@ export default function AllIqama() {
 
   const [users, setUsers] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
 
@@ -84,8 +83,7 @@ export default function AllIqama() {
   }, [users]);
 
   const filteredUsers = useMemo(() => {
-    const query =
-      search.trim().toLowerCase();
+    const query = search.trim().toLowerCase();
 
     if (!query) {
       return iqamaUsers;
@@ -132,11 +130,8 @@ export default function AllIqama() {
     await fetchUsers();
   };
 
-  const handleView = (
-    employee: Employee
-  ) => {
-    const id =
-      employee.id || employee._id;
+  const handleView = (employee: Employee) => {
+    const id = employee.id || employee._id;
 
     if (!id) {
       console.error(
@@ -151,111 +146,111 @@ export default function AllIqama() {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1700px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+      <main className="mx-auto w-full max-w-[1700px] px-2 py-3 sm:px-3 lg:px-3 lg:py-3">
 
         {/* =====================================================
             HEADER
         ====================================================== */}
-        <div className="mb-6">
+        <div className="mb-2 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.035)]">
+          <div className="p-4 sm:p-5 lg:p-6">
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            {/* HEADER */}
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
-            {/* LEFT */}
-            <div>
-              <div className="mb-2 flex items-center gap-2">
+              {/* LEFT */}
+              <div>
+                <div className="mb-2 flex items-center gap-2">
 
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E7F4EE] text-[#197653]">
-                  <ShieldCheck size={16} />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E7F4EE] text-[#197653]">
+                    <ShieldCheck size={16} />
+                  </div>
+
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#197653]">
+                    Employee Records
+                  </span>
+
                 </div>
 
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#197653]">
-                  Employee Records
-                </span>
+                <h1 className="text-2xl font-black tracking-tight text-[#101815] sm:text-3xl">
+                  All Iqama ID
+                </h1>
 
-              </div>
-
-              <h1 className="text-2xl font-black tracking-tight text-[#101815] sm:text-3xl">
-                All Iqama ID
-              </h1>
-
-              <p className="mt-1.5 max-w-xl text-sm leading-6 text-black/45">
-                Browse all employee Iqama records
-                and view complete employee
-                information.
-              </p>
-            </div>
-
-            {/* RIGHT */}
-            <div className="flex items-center gap-3">
-
-              {/* TOTAL */}
-              <div className="rounded-2xl border border-black/[0.05] bg-white px-5 py-3 shadow-sm">
-                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-black/30">
-                  Total Iqama
-                </p>
-
-                <p className="mt-0.5 text-xl font-black text-[#101815]">
-                  {loading
-                    ? "—"
-                    : iqamaUsers.length}
+                <p className="mt-1.5 max-w-xl text-sm leading-6 text-black/45">
+                  Browse all employee Iqama records
+                  and view complete employee
+                  information.
                 </p>
               </div>
 
-              {/* REFRESH */}
-              <button
-                type="button"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex h-[58px] items-center gap-2 rounded-2xl border border-black/[0.06] bg-white px-4 text-xs font-black text-black/60 shadow-sm transition hover:bg-[#F9FBFA] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RefreshCw
-                  size={16}
-                  className={
-                    refreshing
-                      ? "animate-spin"
-                      : ""
-                  }
-                />
+              {/* RIGHT */}
+              <div className="flex items-center gap-3">
 
-                <span className="hidden sm:inline">
-                  Refresh
-                </span>
-              </button>
+                {/* TOTAL */}
+                <div className="rounded-2xl border border-black/[0.05] bg-[#F9FBFA] px-5 py-3">
+                  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-black/30">
+                    Total Iqama
+                  </p>
 
+                  <p className="mt-0.5 text-xl font-black text-[#101815]">
+                    {loading
+                      ? "—"
+                      : iqamaUsers.length}
+                  </p>
+                </div>
+
+                {/* REFRESH */}
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="flex h-[58px] items-center gap-2 rounded-2xl border border-black/[0.06] bg-[#F9FBFA] px-4 text-xs font-black text-black/60 transition hover:bg-[#F3F7F5] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <RefreshCw
+                    size={16}
+                    className={
+                      refreshing
+                        ? "animate-spin"
+                        : ""
+                    }
+                  />
+
+                  <span className="inline">
+                    Refresh
+                  </span>
+                </button>
+
+              </div>
             </div>
-          </div>
 
-          {/* SEARCH */}
-          <div className="relative mt-5 max-w-3xl">
+            {/* SEARCH */}
+            <div className="relative mt-6 max-w-full">
 
-            <Search
-              size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-black/25"
-            />
+              <Search
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-black/25"
+              />
 
-            <input
-              type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
-              }
-              placeholder="Search by Iqama number, employee name, sponsor..."
-              className="h-14 w-full rounded-2xl border border-black/[0.06] bg-white pl-12 pr-12 text-sm font-medium text-black outline-none shadow-[0_8px_30px_rgba(0,0,0,0.025)] transition placeholder:text-black/25 focus:border-[#197653]/30 focus:ring-4 focus:ring-[#197653]/5"
-            />
-
-            {search && (
-              <button
-                type="button"
-                onClick={() =>
-                  setSearch("")
+              <input
+                type="text"
+                value={search}
+                onChange={(event) =>
+                  setSearch(event.target.value)
                 }
-                className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl text-black/30 transition hover:bg-black/5 hover:text-black/60"
-              >
-                <X size={15} />
-              </button>
-            )}
+                placeholder="Search by Iqama number, employee name, sponsor..."
+                className="h-14 w-full rounded-2xl border border-black/[0.06] bg-[#F9FBFA] pl-12 pr-12 text-sm font-medium text-black outline-none transition placeholder:text-black/25 focus:border-[#197653]/30 focus:bg-white focus:ring-4 focus:ring-[#197653]/5"
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl text-black/30 transition hover:bg-black/5 hover:text-black/60"
+                >
+                  <X size={15} />
+                </button>
+              )}
+
+            </div>
 
           </div>
         </div>
@@ -298,14 +293,32 @@ export default function AllIqama() {
             LOADING
         ====================================================== */}
         {loading && (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({
-              length: 6,
-            }).map((_, index) => (
-              <IqamaCardSkeleton
-                key={index}
-              />
-            ))}
+          <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-[#F4F8F6] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.025)] sm:p-5 lg:p-6">
+
+            {/* SECTION HEADER SKELETON */}
+            <div className="mb-5 flex items-center justify-between px-1">
+
+              <div>
+                <div className="h-7 w-32 animate-pulse rounded-lg bg-black/[0.05]" />
+
+                <div className="mt-2 h-3 w-40 animate-pulse rounded bg-black/[0.04]" />
+              </div>
+
+              <div className="hidden h-8 w-20 animate-pulse rounded-xl bg-white sm:block" />
+
+            </div>
+
+            {/* CARDS */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({
+                length: 6,
+              }).map((_, index) => (
+                <IqamaCardSkeleton
+                  key={index}
+                />
+              ))}
+            </div>
+
           </div>
         )}
 
@@ -315,7 +328,7 @@ export default function AllIqama() {
         {!loading &&
           !error &&
           filteredUsers.length === 0 && (
-            <div className="rounded-2xl border border-black/[0.05] bg-white px-6 py-20 text-center shadow-[0_10px_35px_rgba(0,0,0,0.025)]">
+            <div className="rounded-[28px] border border-black/[0.05] bg-white px-6 py-20 text-center shadow-[0_10px_35px_rgba(0,0,0,0.025)]">
 
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E8F4EE] text-[#197653]">
                 <CreditCard size={27} />
@@ -341,25 +354,61 @@ export default function AllIqama() {
         ====================================================== */}
         {!loading &&
           filteredUsers.length > 0 && (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-[#F4F8F6] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.025)] sm:p-5 lg:p-6">
 
-              {filteredUsers.map(
-                (employee) => (
-                  <IqamaCard
-                    key={
-                      employee.id ||
-                      employee._id ||
-                      employee.residentIdNumber
-                    }
-                    employee={employee}
-                    onClick={() =>
-                      handleView(
-                        employee
-                      )
-                    }
-                  />
-                )
-              )}
+              {/* SECTION HEADER */}
+              <div className="mb-5 flex items-center justify-between px-1">
+
+                <div>
+                  <div className="flex items-center gap-2">
+
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E7F4EE] text-[#197653]">
+                      <CreditCard size={14} />
+                    </div>
+
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#197653]">
+                      Iqama Records
+                    </p>
+
+                  </div>
+
+                  <p className="mt-1 text-xs font-medium text-black/35">
+                    {filteredUsers.length}{" "}
+                    {filteredUsers.length === 1
+                      ? "employee record"
+                      : "employee records"}{" "}
+                    available
+                  </p>
+                </div>
+
+                <div className="hidden rounded-xl border border-black/[0.05] bg-white px-3 py-2 sm:block">
+                  <span className="text-[10px] font-black text-black/40">
+                    {filteredUsers.length} Records
+                  </span>
+                </div>
+
+              </div>
+
+              {/* IQAMA CARDS */}
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+
+                {filteredUsers.map(
+                  (employee) => (
+                    <IqamaCard
+                      key={
+                        employee.id ||
+                        employee._id ||
+                        employee.residentIdNumber
+                      }
+                      employee={employee}
+                      onClick={() =>
+                        handleView(employee)
+                      }
+                    />
+                  )
+                )}
+
+              </div>
 
             </div>
           )}
@@ -392,6 +441,7 @@ function IqamaCard({
       onClick={onClick}
       className="group w-full cursor-pointer overflow-hidden rounded-2xl border border-black/[0.05] bg-white text-left shadow-[0_8px_30px_rgba(0,0,0,0.035)] transition-all duration-300 hover:-translate-y-1 hover:border-[#197653]/15 hover:shadow-[0_18px_45px_rgba(0,0,0,0.08)]"
     >
+
       {/* IMAGE */}
       <div className="relative h-[220px] overflow-hidden bg-[#E8EFEB]">
 
@@ -468,7 +518,7 @@ function IqamaCard({
             </p>
 
             <p className="mt-1 font-mono text-base font-black tracking-wide text-[#101815]">
-              {employee.residentIdNumber ||
+              {employee?.residentIdNumber ||
                 "Not available"}
             </p>
 
@@ -520,6 +570,7 @@ function IqamaCard({
             </div>
 
           </div>
+
         </div>
 
         {/* FOOTER */}
