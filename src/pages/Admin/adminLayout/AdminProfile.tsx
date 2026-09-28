@@ -745,17 +745,30 @@ export default function AdminProfile({
 
     if (loading) {
         return (
-            <main className="min-h-[calc(100dvh-78px)] bg-[#F3F7F5] p-5 md:p-8">
-                <div className="mx-auto max-w-[1400px]">
-                    <div className="animate-pulse">
-                        <div className="h-[260px] rounded-[32px] bg-white" />
+            <main className="flex min-h-[calc(100dvh-78px)] w-full items-center justify-center bg-[#F3F7F5]">
+                <div className="flex flex-col items-center justify-center">
+                    {/* Spinner */}
+                    <div className="relative flex h-16 w-16 items-center justify-center">
+                        <div className="absolute inset-0 rounded-full border-4 border-[#197653]/10" />
 
-                        <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                            <div className="h-[430px] rounded-[32px] bg-white" />
+                        <div className="h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-[#197653] border-r-[#197653]" />
 
-                            <div className="h-[430px] rounded-[32px] bg-white" />
+                        <div className="absolute flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm">
+                            <ShieldCheck
+                                size={17}
+                                className="text-[#197653]"
+                            />
                         </div>
                     </div>
+
+                    {/* Loading text */}
+                    <p className="mt-5 text-sm font-black text-black/65">
+                        Loading admin profile
+                    </p>
+
+                    <p className="mt-1 text-xs font-medium text-black/35">
+                        Please wait a moment...
+                    </p>
                 </div>
             </main>
         );
