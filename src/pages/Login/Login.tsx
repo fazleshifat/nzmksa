@@ -58,10 +58,10 @@ export default function Login() {
 
         const role = roleResult.value;
 
-        console.log(
-          'ABSher: Login role:',
-          role
-        );
+        // console.log(
+        //   'ABSher: Login role:',
+        //   role
+        // );
 
         // ---------------------------------------------------------------
         // Admin

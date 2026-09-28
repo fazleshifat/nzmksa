@@ -331,7 +331,7 @@ function DeleteModal({
             type="button"
             disabled={deleting}
             onClick={onConfirm}
-            className="h-11 flex-1 rounded-xl bg-red-500 px-5 text-xs font-black text-white transition hover:bg-red-600 disabled:opacity-50"
+            className="h-11 flex-1 rounded-xl bg-red-500 px-5 py-3 text-xs font-black text-white transition hover:bg-red-600 disabled:opacity-50"
           >
             {deleting
               ? "Deleting..."
@@ -342,7 +342,7 @@ function DeleteModal({
             type="button"
             disabled={deleting}
             onClick={onCancel}
-            className="h-11 flex-1 rounded-xl border border-black/10 bg-white px-5 text-xs font-black text-black/60 transition hover:bg-black/5 disabled:opacity-50"
+            className="h-11 flex-1 rounded-xl border border-black/10 bg-white px-5 py-2 text-xs font-black text-black/60 transition hover:bg-black/5 disabled:opacity-50"
           >
             Cancel
           </button>

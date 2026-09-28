@@ -66,7 +66,7 @@ export default function AdminLogoutModal({
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-red-500 px-5 text-xs font-black text-white shadow-[0_8px_20px_rgba(239,68,68,0.16)] transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-red-500 px-5 py-3 text-xs font-black text-white shadow-[0_8px_20px_rgba(239,68,68,0.16)] transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <LogOut size={15} />
             {loading ? "Logging out..." : "Yes, Logout"}
@@ -76,7 +76,7 @@ export default function AdminLogoutModal({
             type="button"
             disabled={loading}
             onClick={onCancel}
-            className="h-11 flex-1 rounded-xl border border-black/10 bg-white px-5 text-xs font-black text-black/60 transition hover:bg-black/5 disabled:opacity-50"
+            className="h-11 flex-1 rounded-xl border border-black/10 bg-white px-5 py-3 text-xs font-black text-black/60 transition hover:bg-black/5 disabled:opacity-50"
           >
             Cancel
           </button>

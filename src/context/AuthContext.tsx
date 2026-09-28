@@ -126,9 +126,9 @@ export function AuthProvider({
       // ----------------------------------------------------------------------
 
       if (!savedToken) {
-        console.log(
-          'ABSher: No saved authentication token'
-        );
+        // console.log(
+        //   'ABSher: No saved authentication token'
+        // );
 
         setUser(null);
         setAdmin(null);
@@ -156,9 +156,9 @@ export function AuthProvider({
         const loginTime = Number(savedLoginTime);
 
         if (!Number.isFinite(loginTime)) {
-          console.log(
-            'ABSher: Invalid login timestamp'
-          );
+          // console.log(
+          //   'ABSher: Invalid login timestamp'
+          // );
 
           await clearStoredSession();
 
@@ -173,22 +173,22 @@ export function AuthProvider({
         const elapsedTime =
           Date.now() - loginTime;
 
-        console.log(
-          'ABSher: Session age:',
-          elapsedTime,
-          'ms'
-        );
+        // console.log(
+        //   'ABSher: Session age:',
+        //   elapsedTime,
+        //   'ms'
+        // );
 
-        console.log(
-          'ABSher: Remaining session:',
-          SESSION_DURATION - elapsedTime,
-          'ms'
-        );
+        // console.log(
+        //   'ABSher: Remaining session:',
+        //   SESSION_DURATION - elapsedTime,
+        //   'ms'
+        // );
 
         if (elapsedTime >= SESSION_DURATION) {
-          console.log(
-            'ABSher: Local session expired'
-          );
+          // console.log(
+          //   'ABSher: Local session expired'
+          // );
 
           await clearStoredSession();
 
@@ -205,9 +205,9 @@ export function AuthProvider({
       // Verify JWT with backend
       // ----------------------------------------------------------------------
 
-      console.log(
-        'ABSher: Verifying session with backend...'
-      );
+      // console.log(
+      //   'ABSher: Verifying session with backend...'
+      // );
 
       const response = await apiFetch<MeResponse>(
         '/api/auth/me'
@@ -221,10 +221,10 @@ export function AuthProvider({
         response.role === 'admin' &&
         response.admin
       ) {
-        console.log(
-          'ABSher: Admin session restored for:',
-          response.admin.email
-        );
+        // console.log(
+        //   'ABSher: Admin session restored for:',
+        //   response.admin.email
+        // );
 
         // Make sure role is also persisted
         await Preferences.set({
@@ -248,10 +248,10 @@ export function AuthProvider({
         response.role === 'user' &&
         response.user
       ) {
-        console.log(
-          'ABSher: User session restored for:',
-          response.user.name
-        );
+        // console.log(
+        //   'ABSher: User session restored for:',
+        //   response.user.name
+        // );
 
         // Make sure role is also persisted
         await Preferences.set({
@@ -276,10 +276,10 @@ export function AuthProvider({
       );
 
     } catch (error) {
-      console.error(
-        'ABSher: Session restore failed:',
-        error
-      );
+      // console.error(
+      //   'ABSher: Session restore failed:',
+      //   error
+      // );
 
       await clearStoredSession();
 
@@ -302,10 +302,10 @@ export function AuthProvider({
     password: string
   ): Promise<boolean> => {
     try {
-      console.log(
-        'ABSher: Logging in:',
-        idNumberOrEmail
-      );
+      // console.log(
+      //   'ABSher: Logging in:',
+      //   idNumberOrEmail
+      // );
 
       // ----------------------------------------------------------------------
       // Backend login
@@ -331,9 +331,9 @@ export function AuthProvider({
       // ----------------------------------------------------------------------
 
       if (!response.token) {
-        console.error(
-          'ABSher: Login token missing'
-        );
+        // console.error(
+        //   'ABSher: Login token missing'
+        // );
 
         return false;
       }
@@ -357,9 +357,9 @@ export function AuthProvider({
           : response.user?.residentIdNumber;
 
       if (!accountIdentifier) {
-        console.error(
-          'ABSher: Account identifier missing'
-        );
+        // console.error(
+        //   'ABSher: Account identifier missing'
+        // );
 
         await clearStoredSession();
 
@@ -388,10 +388,10 @@ export function AuthProvider({
         response.role === 'admin' &&
         response.admin
       ) {
-        console.log(
-          'ABSher: Admin login successful:',
-          response.admin.email
-        );
+        // console.log(
+        //   'ABSher: Admin login successful:',
+        //   response.admin.email
+        // );
 
         // IMPORTANT:
         // Save admin role for Login.tsx / app startup routing
@@ -400,9 +400,9 @@ export function AuthProvider({
           value: 'admin',
         });
 
-        console.log(
-          'ABSher: Saved role: admin'
-        );
+        // console.log(
+        //   'ABSher: Saved role: admin'
+        // );
 
         setUser(null);
         setAdmin(response.admin);
@@ -420,10 +420,10 @@ export function AuthProvider({
         response.role === 'user' &&
         response.user
       ) {
-        console.log(
-          'ABSher: User login successful:',
-          response.user.name
-        );
+        // console.log(
+        //   'ABSher: User login successful:',
+        //   response.user.name
+        // );
 
         // IMPORTANT:
         // Save user role for Login.tsx / app startup routing
@@ -432,9 +432,9 @@ export function AuthProvider({
           value: 'user',
         });
 
-        console.log(
-          'ABSher: Saved role: user'
-        );
+        // console.log(
+        //   'ABSher: Saved role: user'
+        // );
 
         setAdmin(null);
         setUser(response.user);
@@ -448,19 +448,19 @@ export function AuthProvider({
       // Invalid account response
       // ----------------------------------------------------------------------
 
-      console.error(
-        'ABSher: Invalid login response'
-      );
+      // console.error(
+      //   'ABSher: Invalid login response'
+      // );
 
       await clearStoredSession();
 
       return false;
 
     } catch (error) {
-      console.error(
-        'ABSher: Login failed:',
-        error
-      );
+      // console.error(
+      //   'ABSher: Login failed:',
+      //   error
+      // );
 
       return false;
     }
@@ -471,9 +471,9 @@ export function AuthProvider({
   // ==========================================================================
 
   const logout = async () => {
-    console.log(
-      'ABSher: Logging out'
-    );
+    // console.log(
+    //   'ABSher: Logging out'
+    // );
 
     await clearStoredSession();
 
@@ -504,9 +504,9 @@ export function AuthProvider({
       key: ROLE_KEY,
     });
 
-    console.log(
-      'ABSher: Stored session cleared'
-    );
+    // console.log(
+    //   'ABSher: Stored session cleared'
+    // );
   };
 
   // ==========================================================================
