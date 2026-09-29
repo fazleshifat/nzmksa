@@ -302,7 +302,7 @@ export function AuthProvider({
 
       const accountIdentifier =
         response.role === 'admin' ||
-        response.role === 'superadmin'
+          response.role === 'superadmin'
           ? response.admin?.email
           : response.user?.residentIdNumber;
 
@@ -389,12 +389,20 @@ export function AuthProvider({
   // ==========================================================================
 
   const logout = async () => {
-    await clearStoredSession();
+    try {
+      await apiFetch('/api/auth/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      await clearStoredSession();
 
-    setUser(null);
-    setAdmin(null);
-    setRole(null);
-    setIsAuthenticated(false);
+      setUser(null);
+      setAdmin(null);
+      setRole(null);
+      setIsAuthenticated(false);
+    }
   };
 
   // ==========================================================================
