@@ -22,12 +22,6 @@ interface IqamaViewerProps {
   onClose: () => void;
 }
 
-/**
- * Native Android SystemBars plugin.
- *
- * This must have a native Android implementation
- * in the Capacitor project.
- */
 const SystemBars = registerPlugin<{
   setImmersive: (options: {
     enabled: boolean;
@@ -51,26 +45,6 @@ export default function IqamaViewer({
 }: IqamaViewerProps) {
   const { user } = useAuth();
 
-  /*
-   * CURRENT AUTH STRUCTURE
-   *
-   * employee = the actual logged-in Employee object.
-   *
-   * Data comes from:
-   *
-   * MongoDB
-   *   ↓
-   * Express API
-   *   ↓
-   * AuthContext
-   *   ↓
-   * employee
-   *
-   * Therefore DO NOT use:
-   *
-   * employee?.employee
-   */
-
   const currentEmployee = user;
 
   const [page, setPage] = useState(0);
@@ -91,27 +65,6 @@ export default function IqamaViewer({
   // DYNAMIC QR DATA
   // ==========================================
 
-  /*
-   * Converts the employee's Iqama date into
-   * DDMMYY format.
-   *
-   * Supports:
-   *
-   * DD/MM/YYYY
-   * YYYY-MM-DD
-   *
-   * Examples:
-   *
-   * 15/01/2023 → 150123
-   * 2023-01-15 → 150123
-   *
-   * The QR uses:
-   *
-   * hid → Iqama number
-   * pid → Iqama number
-   * exp → Iqama expiry date
-   * iat → Iqama issue date
-   */
 
   const formatQrDate = (date?: string) => {
     if (!date) {
@@ -155,12 +108,6 @@ export default function IqamaViewer({
     return '';
   };
 
-  /*
-   * DEBUG
-   *
-   * This confirms exactly what the frontend
-   * receives from the backend.
-   */
   useEffect(() => {
     if (!currentEmployee) {
       return;
