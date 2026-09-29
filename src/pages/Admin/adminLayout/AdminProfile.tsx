@@ -1064,7 +1064,12 @@ export default function AdminProfile({
                     MAIN CONTENT
                 ===================================================== */}
 
-                <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+                <div
+                    className={`mt-6 grid gap-6 ${isOwnProfile
+                            ? "lg:grid-cols-[1.15fr_0.85fr]"
+                            : "grid-cols-1"
+                        }`}
+                >
 
                     {/* =================================================
                         BASIC INFORMATION
@@ -1131,22 +1136,6 @@ export default function AdminProfile({
                                     <label className="text-[10px] font-black uppercase tracking-[0.15em] text-black/35">
                                         Full Name
                                     </label>
-
-                                    {!isViewOnly &&
-                                        isOwnProfile &&
-                                        !editingName && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setEditingName(
-                                                        true
-                                                    )
-                                                }
-                                                className="text-[10px] font-black text-brand-green"
-                                            >
-                                                Edit
-                                            </button>
-                                        )}
                                 </div>
 
                                 <div className="relative">
@@ -1182,22 +1171,6 @@ export default function AdminProfile({
                                     <label className="text-[10px] font-black uppercase tracking-[0.15em] text-black/35">
                                         Email Address
                                     </label>
-
-                                    {!isViewOnly &&
-                                        isOwnProfile &&
-                                        !editingEmail && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setEditingEmail(
-                                                        true
-                                                    )
-                                                }
-                                                className="text-[10px] font-black text-brand-green"
-                                            >
-                                                Edit
-                                            </button>
-                                        )}
                                 </div>
 
                                 <div className="relative">
@@ -1402,78 +1375,48 @@ export default function AdminProfile({
                         </div>
                     </section>
 
-                    {/* =================================================
-                        SECURITY
-                    ================================================= */}
+                    {isOwnProfile && (
+                        <section className="h-fit rounded-[30px] border border-black/[0.05] bg-white p-6 shadow-[0_15px_50px_rgba(20,50,40,0.05)] md:p-8">
 
-                    <section className="h-fit rounded-[30px] border border-black/[0.05] bg-white p-6 shadow-[0_15px_50px_rgba(20,50,40,0.05)] md:p-8">
+                            {/* =================================================
+            SECURITY
+        ================================================= */}
 
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF7E7] text-[#B7791F]">
-                                    <LockKeyhole
-                                        size={18}
-                                    />
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF7E7] text-[#B7791F]">
+                                        <LockKeyhole size={18} />
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-lg font-black">
+                                            Security
+                                        </h3>
+
+                                        <p className="text-xs text-black/35">
+                                            Protect your administrator account.
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <h3 className="text-lg font-black">
-                                        Security
-                                    </h3>
-
-                                    <p className="text-xs text-black/35">
-                                        Protect your administrator account.
-                                    </p>
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setEditingPassword(true);
+                                        setError("");
+                                        setMessage("");
+                                    }}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-[#F3F7F5] px-3.5 py-2 text-xs font-black text-black/55 transition hover:bg-[#EAF5F0] hover:text-brand-green"
+                                >
+                                    <Pencil size={14} />
+                                    Edit
+                                </button>
                             </div>
 
-                            {!isViewOnly &&
-                                isOwnProfile && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setEditingPassword(
-                                                true
-                                            );
-
-                                            setError("");
-                                            setMessage("");
-                                        }}
-                                        className="inline-flex items-center gap-2 rounded-xl bg-[#F3F7F5] px-3.5 py-2 text-xs font-black text-black/55 transition hover:bg-[#EAF5F0] hover:text-brand-green"
-                                    >
-                                        <Pencil
-                                            size={14}
-                                        />
-
-                                        Edit
-                                    </button>
-                                )}
-                        </div>
-
-                        {isViewOnly ? (
-                            <div className="mt-8 rounded-3xl border border-black/[0.06] bg-[#F8FAF9] p-6">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-black/35 shadow-sm">
-                                    <ShieldCheck
-                                        size={21}
-                                    />
-                                </div>
-
-                                <h4 className="mt-5 text-sm font-black">
-                                    Password protected
-                                </h4>
-
-                                <p className="mt-2 text-xs leading-5 text-black/40">
-                                    Password information is private and cannot be viewed from another administrator's profile.
-                                </p>
-                            </div>
-                        ) : (
                             <form
-                                onSubmit={
-                                    handlePasswordChange
-                                }
+                                onSubmit={handlePasswordChange}
                                 className="mt-8 space-y-5"
                             >
-
                                 {/* Current password */}
 
                                 <div>
@@ -1493,52 +1436,31 @@ export default function AdminProfile({
                                                     ? "text"
                                                     : "password"
                                             }
-                                            value={
-                                                currentPassword
-                                            }
-                                            onChange={(
-                                                event
-                                            ) =>
+                                            value={currentPassword}
+                                            onChange={(event) =>
                                                 setCurrentPassword(
-                                                    event
-                                                        .target
-                                                        .value
+                                                    event.target.value
                                                 )
                                             }
-                                            disabled={
-                                                !editingPassword
-                                            }
+                                            disabled={!editingPassword}
                                             placeholder="Enter current password"
                                             className="h-14 w-full rounded-2xl border border-black/[0.07] bg-[#F8FAF9] pl-12 pr-12 text-sm font-normal text-black outline-none transition placeholder:text-black/20 focus:border-brand-green/30 focus:bg-white focus:ring-4 focus:ring-brand-green/5 disabled:text-black"
                                         />
 
                                         <button
                                             type="button"
-                                            disabled={
-                                                !editingPassword
-                                            }
+                                            disabled={!editingPassword}
                                             onClick={() =>
                                                 setShowCurrentPassword(
-                                                    (
-                                                        value
-                                                    ) =>
-                                                        !value
+                                                    (value) => !value
                                                 )
                                             }
                                             className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-black/30 hover:bg-black/5 hover:text-black/60 disabled:opacity-50"
                                         >
                                             {showCurrentPassword ? (
-                                                <EyeOff
-                                                    size={
-                                                        17
-                                                    }
-                                                />
+                                                <EyeOff size={17} />
                                             ) : (
-                                                <Eye
-                                                    size={
-                                                        17
-                                                    }
-                                                />
+                                                <Eye size={17} />
                                             )}
                                         </button>
                                     </div>
@@ -1563,52 +1485,31 @@ export default function AdminProfile({
                                                     ? "text"
                                                     : "password"
                                             }
-                                            value={
-                                                newPassword
-                                            }
-                                            onChange={(
-                                                event
-                                            ) =>
+                                            value={newPassword}
+                                            onChange={(event) =>
                                                 setNewPassword(
-                                                    event
-                                                        .target
-                                                        .value
+                                                    event.target.value
                                                 )
                                             }
-                                            disabled={
-                                                !editingPassword
-                                            }
+                                            disabled={!editingPassword}
                                             placeholder="Minimum 6 characters"
                                             className="h-14 w-full rounded-2xl border border-black/[0.07] bg-[#F8FAF9] pl-12 pr-12 text-sm font-normal text-black outline-none transition placeholder:text-black/20 focus:border-brand-green/30 focus:bg-white focus:ring-4 focus:ring-brand-green/5 disabled:text-black"
                                         />
 
                                         <button
                                             type="button"
-                                            disabled={
-                                                !editingPassword
-                                            }
+                                            disabled={!editingPassword}
                                             onClick={() =>
                                                 setShowNewPassword(
-                                                    (
-                                                        value
-                                                    ) =>
-                                                        !value
+                                                    (value) => !value
                                                 )
                                             }
                                             className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-black/30 hover:bg-black/5 hover:text-black/60 disabled:opacity-50"
                                         >
                                             {showNewPassword ? (
-                                                <EyeOff
-                                                    size={
-                                                        17
-                                                    }
-                                                />
+                                                <EyeOff size={17} />
                                             ) : (
-                                                <Eye
-                                                    size={
-                                                        17
-                                                    }
-                                                />
+                                                <Eye size={17} />
                                             )}
                                         </button>
                                     </div>
@@ -1620,14 +1521,12 @@ export default function AdminProfile({
 
                                         {newPassword && (
                                             <span
-                                                className={`text-[10px] font-black ${newPassword.length >=
-                                                    6
+                                                className={`text-[10px] font-black ${newPassword.length >= 6
                                                     ? "text-emerald-500"
                                                     : "text-amber-500"
                                                     }`}
                                             >
-                                                {newPassword.length >=
-                                                    6
+                                                {newPassword.length >= 6
                                                     ? "Strong enough"
                                                     : `${newPassword.length}/6 characters`}
                                             </span>
@@ -1654,29 +1553,19 @@ export default function AdminProfile({
                                                     ? "text"
                                                     : "password"
                                             }
-                                            value={
-                                                confirmPassword
-                                            }
-                                            onChange={(
-                                                event
-                                            ) =>
+                                            value={confirmPassword}
+                                            onChange={(event) =>
                                                 setConfirmPassword(
-                                                    event
-                                                        .target
-                                                        .value
+                                                    event.target.value
                                                 )
                                             }
-                                            disabled={
-                                                !editingPassword
-                                            }
+                                            disabled={!editingPassword}
                                             placeholder="Repeat new password"
                                             className={`h-14 w-full rounded-2xl border bg-[#F8FAF9] pl-12 pr-12 text-sm font-normal text-black outline-none transition placeholder:text-black/20 focus:bg-white focus:ring-4 disabled:text-black ${confirmPassword &&
-                                                newPassword !==
-                                                confirmPassword
+                                                newPassword !== confirmPassword
                                                 ? "border-red-200 focus:border-red-300 focus:ring-red-500/5"
                                                 : confirmPassword &&
-                                                    newPassword ===
-                                                    confirmPassword
+                                                    newPassword === confirmPassword
                                                     ? "border-emerald-200 focus:border-emerald-300 focus:ring-emerald-500/5"
                                                     : "border-black/[0.07] focus:border-brand-green/30 focus:ring-brand-green/5"
                                                 }`}
@@ -1684,43 +1573,26 @@ export default function AdminProfile({
 
                                         <button
                                             type="button"
-                                            disabled={
-                                                !editingPassword
-                                            }
+                                            disabled={!editingPassword}
                                             onClick={() =>
                                                 setShowConfirmPassword(
-                                                    (
-                                                        value
-                                                    ) =>
-                                                        !value
+                                                    (value) => !value
                                                 )
                                             }
                                             className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-black/30 hover:bg-black/5 hover:text-black/60 disabled:opacity-50"
                                         >
                                             {showConfirmPassword ? (
-                                                <EyeOff
-                                                    size={
-                                                        17
-                                                    }
-                                                />
+                                                <EyeOff size={17} />
                                             ) : (
-                                                <Eye
-                                                    size={
-                                                        17
-                                                    }
-                                                />
+                                                <Eye size={17} />
                                             )}
                                         </button>
                                     </div>
 
                                     {confirmPassword &&
-                                        newPassword ===
-                                        confirmPassword && (
+                                        newPassword === confirmPassword && (
                                             <p className="mt-2 flex items-center gap-1.5 text-[10px] font-black text-emerald-500">
-                                                <Check
-                                                    size={12}
-                                                />
-
+                                                <Check size={12} />
                                                 Passwords match
                                             </p>
                                         )}
@@ -1732,12 +1604,8 @@ export default function AdminProfile({
                                     <div className="flex flex-col gap-3 border-t border-black/[0.06] pt-5 sm:flex-row sm:justify-end">
                                         <button
                                             type="button"
-                                            onClick={
-                                                cancelPasswordEdit
-                                            }
-                                            disabled={
-                                                passwordSaving
-                                            }
+                                            onClick={cancelPasswordEdit}
+                                            disabled={passwordSaving}
                                             className="h-12 rounded-2xl border border-black/[0.07] px-5 text-sm font-black text-black/55 transition hover:bg-black/[0.03] disabled:opacity-50"
                                         >
                                             Cancel
@@ -1745,9 +1613,7 @@ export default function AdminProfile({
 
                                         <button
                                             type="submit"
-                                            disabled={
-                                                passwordSaving
-                                            }
+                                            disabled={passwordSaving}
                                             className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#173D31] px-6 text-sm font-black text-white shadow-[0_10px_25px_rgba(23,61,49,0.14)] transition hover:-translate-y-0.5 disabled:opacity-50"
                                         >
                                             {passwordSaving ? (
@@ -1756,9 +1622,7 @@ export default function AdminProfile({
                                                     className="animate-spin"
                                                 />
                                             ) : (
-                                                <Save
-                                                    size={16}
-                                                />
+                                                <Save size={16} />
                                             )}
 
                                             {passwordSaving
@@ -1783,8 +1647,8 @@ export default function AdminProfile({
                                     </div>
                                 </div>
                             </form>
-                        )}
-                    </section>
+                        </section>
+                    )}
                 </div>
             </div>
 

@@ -92,10 +92,25 @@ export default function IqamaViewer({
   // ==========================================
 
   /*
-   * Generate QR data from the currently logged-in
-   * employee.
+   * Converts the employee's Iqama date into
+   * DDMMYY format.
    *
-   * This means every employee gets their own QR data.
+   * Supports:
+   *
+   * DD/MM/YYYY
+   * YYYY-MM-DD
+   *
+   * Examples:
+   *
+   * 15/01/2023 → 150123
+   * 2023-01-15 → 150123
+   *
+   * The QR uses:
+   *
+   * hid → Iqama number
+   * pid → Iqama number
+   * exp → Iqama expiry date
+   * iat → Iqama issue date
    */
 
   const formatQrDate = (date?: string) => {
@@ -103,40 +118,122 @@ export default function IqamaViewer({
       return '';
     }
 
-    // Converts DD/MM/YYYY → DDMMYY
-    const [day, month, year] = date.split('/');
+    // ==========================================
+    // DD/MM/YYYY
+    // ==========================================
 
-    if (!day || !month || !year) {
-      return '';
+    if (date.includes('/')) {
+      const [day, month, year] = date.split('/');
+
+      if (!day || !month || !year) {
+        return '';
+      }
+
+      return `${day.padStart(2, '0')}${month.padStart(
+        2,
+        '0'
+      )}${year.slice(-2)}`;
     }
 
-    return `${day.padStart(2, '0')}${month.padStart(
-      2,
-      '0'
-    )}${year.slice(-2)}`;
+    // ==========================================
+    // YYYY-MM-DD
+    // ==========================================
+
+    if (date.includes('-')) {
+      const [year, month, day] = date.split('-');
+
+      if (!year || !month || !day) {
+        return '';
+      }
+
+      return `${day.padStart(2, '0')}${month.padStart(
+        2,
+        '0'
+      )}${year.slice(-2)}`;
+    }
+
+    return '';
   };
+
+  /*
+   * DEBUG
+   *
+   * This confirms exactly what the frontend
+   * receives from the backend.
+   */
+  useEffect(() => {
+    if (!currentEmployee) {
+      return;
+    }
+
+    console.log('QR Employee:', currentEmployee);
+    console.log(
+      'Issue Date:',
+      currentEmployee.residentIdIssueDate
+    );
+    console.log(
+      'Expiry Date:',
+      currentEmployee.residentIdExpiry
+    );
+    console.log(
+      'Formatted Issue Date:',
+      formatQrDate(
+        currentEmployee.residentIdIssueDate
+      )
+    );
+    console.log(
+      'Formatted Expiry Date:',
+      formatQrDate(
+        currentEmployee.residentIdExpiry
+      )
+    );
+  }, [currentEmployee]);
 
   const qrData = currentEmployee
     ? JSON.stringify({
         sig: 'YvzI6hiqdD+gkz9gwziznPncyeJ4CUlACWaV2SEiHFlDbhbjWSFZGA6I+KVS1OWZcBKGE97rjX8V2FLbnEjFH+UZNqn/m3JtJXjwI5NUYOB3saalPFxi9WtKNX+udwNc/zNq9U9emGHs7cYvh/grCrS03No8DrqX+xzs1UnbZOvbEpDkEERineKMfX8Lhsj8be8jXU+CMv9/Wsx5JWbZPxXbArWAlM2XcCMQsfIomb/+M/ncMqLODKptF6gaN9p3Jjfi2mTbpnvtpQYEo/UG24seP+/lu1GnRBlVDM/sFr+DPFjTsD/s4j1Phhtg7ukpxkH+BDW/LRhPei+1QX+lZA==',
+
         header: {
           kid: 121980001,
         },
+
         payload: {
+          /*
+           * Existing QR timestamp.
+           *
+           * This is NOT the Iqama issue date.
+           * It remains unchanged.
+           */
           iat: Date.now(),
+
           cda: `100$ISS:1${JSON.stringify({
+            /*
+             * Iqama number
+             */
             hid: currentEmployee.residentIdNumber,
 
             cnt: {
+              /*
+               * Iqama number
+               */
               pid: currentEmployee.residentIdNumber,
             },
 
+            /*
+             * Existing type
+             */
             typ: 3,
 
+            /*
+             * Iqama expiry date
+             */
             exp: formatQrDate(
               currentEmployee.residentIdExpiry
             ),
 
+            /*
+             * Iqama issue date
+             */
             iat: formatQrDate(
               currentEmployee.residentIdIssueDate
             ),

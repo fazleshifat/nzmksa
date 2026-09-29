@@ -615,7 +615,7 @@ export default function AllAdmins() {
                         </span>
 
                         <SortButton
-                            label="Created"
+                            label="Joined"
                             active={
                                 sortKey ===
                                 "createdAt"

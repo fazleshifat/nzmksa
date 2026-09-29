@@ -714,18 +714,18 @@ export default function EditUser() {
     // =========================================================================
 
     useEffect(() => {
-        if (!showSuccessModal) {
+        if (!showSuccessModal || !id) {
             return;
         }
 
         const timer = window.setTimeout(() => {
-            navigate(-1);
+            navigate(`/admin/users/${id}`);
         }, 1500);
 
         return () => {
             window.clearTimeout(timer);
         };
-    }, [showSuccessModal, navigate]);
+    }, [showSuccessModal, navigate, id]);
 
     // =========================================================================
     // LOADING
@@ -848,8 +848,8 @@ export default function EditUser() {
                     <div className="hidden items-center gap-2 rounded-full bg-[#EAF5F0] px-4 py-2 sm:flex">
                         <span
                             className={`h-2 w-2 rounded-full ${form.active
-                                    ? 'bg-brand-green'
-                                    : 'bg-black/20'
+                                ? 'bg-brand-green'
+                                : 'bg-black/20'
                                 }`}
                         />
 
@@ -1736,14 +1736,14 @@ function Toggle({
                     onChange(!checked)
                 }
                 className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked
-                        ? 'bg-brand-green'
-                        : 'bg-black/15'
+                    ? 'bg-brand-green'
+                    : 'bg-black/15'
                     }`}
             >
                 <span
                     className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${checked
-                            ? 'left-6'
-                            : 'left-1'
+                        ? 'left-6'
+                        : 'left-1'
                         }`}
                 />
             </button>
