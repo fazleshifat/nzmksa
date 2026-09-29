@@ -41,8 +41,33 @@ export function AdminRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  if (role !== 'admin') {
+  if (
+    role !== 'admin' &&
+    role !== 'superadmin'
+  ) {
     return <Navigate to="/home" replace />;
+  }
+
+  return <Outlet />;
+}
+
+// ============================================================================
+// SUPER ADMIN ROUTE
+// ============================================================================
+
+export function SuperAdminRoute() {
+  const { isAuthenticated, loading, role } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role !== 'superadmin') {
+    return <Navigate to="/admin" replace />;
   }
 
   return <Outlet />;
@@ -59,11 +84,11 @@ export function ProtectedNoNav() {
     return null;
   }
 
+  // Normal user pages
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // These are normal user pages
   if (role !== 'user') {
     return <Navigate to="/admin" replace />;
   }

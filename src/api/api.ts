@@ -69,13 +69,16 @@ export interface Admin {
 
     name: string;
     email: string;
-    role: 'admin';
+    role: 'admin' | 'superadmin';
     active?: boolean;
 
     [key: string]: unknown;
 }
 
-export type AccountRole = 'user' | 'admin';
+export type AccountRole =
+    | 'user'
+    | 'admin'
+    | 'superadmin';
 
 export interface LoginResponse {
     message?: string;

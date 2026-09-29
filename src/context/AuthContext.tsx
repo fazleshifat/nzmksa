@@ -126,10 +126,6 @@ export function AuthProvider({
       // ----------------------------------------------------------------------
 
       if (!savedToken) {
-        // console.log(
-        //   'ABSher: No saved authentication token'
-        // );
-
         setUser(null);
         setAdmin(null);
         setRole(null);
@@ -156,10 +152,6 @@ export function AuthProvider({
         const loginTime = Number(savedLoginTime);
 
         if (!Number.isFinite(loginTime)) {
-          // console.log(
-          //   'ABSher: Invalid login timestamp'
-          // );
-
           await clearStoredSession();
 
           setUser(null);
@@ -173,23 +165,7 @@ export function AuthProvider({
         const elapsedTime =
           Date.now() - loginTime;
 
-        // console.log(
-        //   'ABSher: Session age:',
-        //   elapsedTime,
-        //   'ms'
-        // );
-
-        // console.log(
-        //   'ABSher: Remaining session:',
-        //   SESSION_DURATION - elapsedTime,
-        //   'ms'
-        // );
-
         if (elapsedTime >= SESSION_DURATION) {
-          // console.log(
-          //   'ABSher: Local session expired'
-          // );
-
           await clearStoredSession();
 
           setUser(null);
@@ -205,36 +181,29 @@ export function AuthProvider({
       // Verify JWT with backend
       // ----------------------------------------------------------------------
 
-      // console.log(
-      //   'ABSher: Verifying session with backend...'
-      // );
-
       const response = await apiFetch<MeResponse>(
         '/api/auth/me'
       );
 
       // ----------------------------------------------------------------------
-      // Restore admin session
+      // Restore admin / superadmin session
       // ----------------------------------------------------------------------
 
       if (
-        response.role === 'admin' &&
+        (
+          response.role === 'admin' ||
+          response.role === 'superadmin'
+        ) &&
         response.admin
       ) {
-        // console.log(
-        //   'ABSher: Admin session restored for:',
-        //   response.admin.email
-        // );
-
-        // Make sure role is also persisted
         await Preferences.set({
           key: ROLE_KEY,
-          value: 'admin',
+          value: response.role,
         });
 
         setUser(null);
         setAdmin(response.admin);
-        setRole('admin');
+        setRole(response.role);
         setIsAuthenticated(true);
 
         return;
@@ -248,12 +217,6 @@ export function AuthProvider({
         response.role === 'user' &&
         response.user
       ) {
-        // console.log(
-        //   'ABSher: User session restored for:',
-        //   response.user.name
-        // );
-
-        // Make sure role is also persisted
         await Preferences.set({
           key: ROLE_KEY,
           value: 'user',
@@ -276,11 +239,6 @@ export function AuthProvider({
       );
 
     } catch (error) {
-      // console.error(
-      //   'ABSher: Session restore failed:',
-      //   error
-      // );
-
       await clearStoredSession();
 
       setUser(null);
@@ -302,11 +260,6 @@ export function AuthProvider({
     password: string
   ): Promise<boolean> => {
     try {
-      // console.log(
-      //   'ABSher: Logging in:',
-      //   idNumberOrEmail
-      // );
-
       // ----------------------------------------------------------------------
       // Backend login
       // ----------------------------------------------------------------------
@@ -331,10 +284,6 @@ export function AuthProvider({
       // ----------------------------------------------------------------------
 
       if (!response.token) {
-        // console.error(
-        //   'ABSher: Login token missing'
-        // );
-
         return false;
       }
 
@@ -352,15 +301,12 @@ export function AuthProvider({
       // ----------------------------------------------------------------------
 
       const accountIdentifier =
-        response.role === 'admin'
+        response.role === 'admin' ||
+        response.role === 'superadmin'
           ? response.admin?.email
           : response.user?.residentIdNumber;
 
       if (!accountIdentifier) {
-        // console.error(
-        //   'ABSher: Account identifier missing'
-        // );
-
         await clearStoredSession();
 
         return false;
@@ -381,32 +327,24 @@ export function AuthProvider({
       });
 
       // ----------------------------------------------------------------------
-      // Admin login
+      // Admin / Super Admin login
       // ----------------------------------------------------------------------
 
       if (
-        response.role === 'admin' &&
+        (
+          response.role === 'admin' ||
+          response.role === 'superadmin'
+        ) &&
         response.admin
       ) {
-        // console.log(
-        //   'ABSher: Admin login successful:',
-        //   response.admin.email
-        // );
-
-        // IMPORTANT:
-        // Save admin role for Login.tsx / app startup routing
         await Preferences.set({
           key: ROLE_KEY,
-          value: 'admin',
+          value: response.role,
         });
-
-        // console.log(
-        //   'ABSher: Saved role: admin'
-        // );
 
         setUser(null);
         setAdmin(response.admin);
-        setRole('admin');
+        setRole(response.role);
         setIsAuthenticated(true);
 
         return true;
@@ -420,21 +358,10 @@ export function AuthProvider({
         response.role === 'user' &&
         response.user
       ) {
-        // console.log(
-        //   'ABSher: User login successful:',
-        //   response.user.name
-        // );
-
-        // IMPORTANT:
-        // Save user role for Login.tsx / app startup routing
         await Preferences.set({
           key: ROLE_KEY,
           value: 'user',
         });
-
-        // console.log(
-        //   'ABSher: Saved role: user'
-        // );
 
         setAdmin(null);
         setUser(response.user);
@@ -448,20 +375,11 @@ export function AuthProvider({
       // Invalid account response
       // ----------------------------------------------------------------------
 
-      // console.error(
-      //   'ABSher: Invalid login response'
-      // );
-
       await clearStoredSession();
 
       return false;
 
     } catch (error) {
-      // console.error(
-      //   'ABSher: Login failed:',
-      //   error
-      // );
-
       return false;
     }
   };
@@ -471,10 +389,6 @@ export function AuthProvider({
   // ==========================================================================
 
   const logout = async () => {
-    // console.log(
-    //   'ABSher: Logging out'
-    // );
-
     await clearStoredSession();
 
     setUser(null);
@@ -503,10 +417,6 @@ export function AuthProvider({
     await Preferences.remove({
       key: ROLE_KEY,
     });
-
-    // console.log(
-    //   'ABSher: Stored session cleared'
-    // );
   };
 
   // ==========================================================================

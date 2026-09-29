@@ -58,16 +58,14 @@ export default function Login() {
 
         const role = roleResult.value;
 
-        // console.log(
-        //   'ABSher: Login role:',
-        //   role
-        // );
-
         // ---------------------------------------------------------------
-        // Admin
+        // Admin / Super Admin
         // ---------------------------------------------------------------
 
-        if (role === 'admin') {
+        if (
+          role === 'admin' ||
+          role === 'superadmin'
+        ) {
           navigate('/admin', {
             replace: true,
           });

@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute, {
   ProtectedNoNav,
   AdminRoute,
+  SuperAdminRoute,
 } from './components/ProtectedRoute';
 
 import Login from './pages/Login/Login';
@@ -30,6 +31,7 @@ import DrivingLicense from './pages/Profile/DrivingLicense';
 import LaborImportations from './pages/Profile/LaborImportations';
 import TravelRecord from './pages/Profile/TravelRecord';
 import Welcome from './pages/Welcome/Welcome';
+
 import Admin from './pages/Admin/AdminDashboardHome';
 import AllIqama from './pages/Admin/adminLayout/AllIqama';
 import AllAdmins from './pages/Admin/adminLayout/AllAdmin';
@@ -38,11 +40,13 @@ import EditUser from './pages/Admin/adminLayout/allUser/EditUser';
 import CreateUser from './pages/Admin/adminLayout/allUser/CreateUser';
 import AdminLayout from './pages/Admin/adminLayout/AdminLayout';
 import AdminProfile from './pages/Admin/adminLayout/AdminProfile';
+import Sessions from './pages/Admin/Sessions/Sessions';
 
 function AppRoutes() {
   useAndroidBackButton();
 
   const location = useLocation();
+
   const isAdminRoute =
     location.pathname.startsWith('/admin');
 
@@ -56,27 +60,50 @@ function AppRoutes() {
     >
       <Routes>
         <Route path="/" element={<Welcome />} />
-        <Route path="/welcome" element={<Welcome />} />
-        <Route path="/login" element={<Login />} />
 
-        {/* Admin routes */}
+        <Route
+          path="/welcome"
+          element={<Welcome />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        {/* ================================================================== */}
+        {/* ADMIN ROUTES */}
+        {/* ================================================================== */}
+
         <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/all-iqama" element={
-            <AllIqama />
-          } />
-          <Route path="/admin/all-admin" element={
-            <AdminLayout>
-              <AllAdmins />
-            </AdminLayout>
-          } />
+          <Route
+            path="/admin"
+            element={<Admin />}
+          />
 
-          <Route path="/admin/profile" element={
-            <AdminProfile />
-          } />
-          <Route path="/admin/admins/:id" element={
-            <AdminProfile />
-          } />
+          <Route
+            path="/admin/all-iqama"
+            element={<AllIqama />}
+          />
+
+          <Route
+            path="/admin/all-admin"
+            element={
+              <AdminLayout>
+                <AllAdmins />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/profile"
+            element={<AdminProfile />}
+          />
+
+          <Route
+            path="/admin/admins/:id"
+            element={<AdminProfile />}
+          />
 
           <Route
             path="/admin/users/:id"
@@ -94,17 +121,61 @@ function AppRoutes() {
           />
         </Route>
 
-        {/* User routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/family" element={<Family />} />
-          <Route path="/workers" element={<Workers />} />
-          <Route path="/other" element={<Other />} />
+        {/* ================================================================== */}
+        {/* SUPER ADMIN ROUTES */}
+        {/* ================================================================== */}
+
+        <Route element={<SuperAdminRoute />}>
+          <Route
+            path="/admin/sessions"
+            element={
+              <AdminLayout>
+                <Sessions />
+              </AdminLayout>
+            }
+          />
         </Route>
 
+        {/* ================================================================== */}
+        {/* USER ROUTES */}
+        {/* ================================================================== */}
+
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/home"
+            element={<Home />}
+          />
+
+          <Route
+            path="/services"
+            element={<Services />}
+          />
+
+          <Route
+            path="/family"
+            element={<Family />}
+          />
+
+          <Route
+            path="/workers"
+            element={<Workers />}
+          />
+
+          <Route
+            path="/other"
+            element={<Other />}
+          />
+        </Route>
+
+        {/* ================================================================== */}
+        {/* USER ROUTES WITHOUT BOTTOM NAV */}
+        {/* ================================================================== */}
+
         <Route element={<ProtectedNoNav />}>
-          <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/profile"
+            element={<Profile />}
+          />
 
           <Route
             path="/profile/personal-details"
@@ -147,9 +218,18 @@ function AppRoutes() {
           />
         </Route>
 
+        {/* ================================================================== */}
+        {/* FALLBACK */}
+        {/* ================================================================== */}
+
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
         />
       </Routes>
 

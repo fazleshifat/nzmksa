@@ -3,38 +3,61 @@ import {
   Users,
   CreditCard,
   ShieldCheck,
+  Monitor,
   X,
   ChevronRight,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 interface Props {
   mobileOpen: boolean;
   onClose: () => void;
 }
 
-const links = [
-  {
-    label: "All Users",
-    description: "Employee accounts",
-    icon: Users,
-    to: "/admin",
-  },
-  {
-    label: "All Iqama ID",
-    description: "Iqama records",
-    icon: CreditCard,
-    to: "/admin/all-iqama",
-  },
-  {
-    label: "All Admin",
-    description: "All Admin profile",
-    icon: ShieldCheck,
-    to: "/admin/all-admin",
-  },
-];
+export default function AdminSidebar({
+  mobileOpen,
+  onClose,
+}: Props) {
+  const { admin } = useAuth();
 
-export default function AdminSidebar({ mobileOpen, onClose }: Props) {
+  const links = [
+    {
+      label: "All Users",
+      description: "Employee accounts",
+      icon: Users,
+      to: "/admin",
+      superAdminOnly: false,
+    },
+    {
+      label: "All Iqama ID",
+      description: "Iqama records",
+      icon: CreditCard,
+      to: "/admin/all-iqama",
+      superAdminOnly: false,
+    },
+    {
+      label: "All Admin",
+      description: "All Admin profile",
+      icon: ShieldCheck,
+      to: "/admin/all-admin",
+      superAdminOnly: false,
+    },
+    {
+      label: "Sessions",
+      description: "Session management",
+      icon: Monitor,
+      to: "/admin/sessions",
+      superAdminOnly: true,
+    },
+  ];
+
+  const visibleLinks = links.filter(
+    (link) =>
+      !link.superAdminOnly ||
+      admin?.role === "superadmin"
+  );
+
   return (
     <>
       {mobileOpen && (
@@ -47,7 +70,9 @@ export default function AdminSidebar({ mobileOpen, onClose }: Props) {
 
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-[270px] flex-col border-r border-black/[0.06] bg-white transition-transform duration-300 lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+          mobileOpen
+            ? "translate-x-0"
+            : "-translate-x-full"
         }`}
       >
         <div className="flex h-[78px] items-center justify-between border-b border-black/[0.06] px-5">
@@ -60,7 +85,10 @@ export default function AdminSidebar({ mobileOpen, onClose }: Props) {
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">
                 Absher
               </p>
-              <p className="text-sm font-black">Admin Panel</p>
+
+              <p className="text-sm font-black">
+                Admin Panel
+              </p>
             </div>
           </div>
 
@@ -79,7 +107,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: Props) {
           </p>
 
           <nav className="mt-3 space-y-1.5">
-            {links.map((link) => {
+            {visibleLinks.map((link) => {
               const Icon = link.icon;
 
               return (
@@ -109,7 +137,10 @@ export default function AdminSidebar({ mobileOpen, onClose }: Props) {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-black">{link.label}</p>
+                        <p className="text-xs font-black">
+                          {link.label}
+                        </p>
+
                         <p className="mt-0.5 text-[10px] font-medium opacity-50">
                           {link.description}
                         </p>
@@ -137,13 +168,17 @@ export default function AdminSidebar({ mobileOpen, onClose }: Props) {
               <LayoutDashboard size={18} />
             </div>
 
-            <p className="mt-4 text-sm font-black">Admin Workspace</p>
+            <p className="mt-4 text-sm font-black">
+              Admin Workspace
+            </p>
+
             <p className="mt-1 text-[11px] leading-5 text-white/50">
               Secure employee management dashboard.
             </p>
 
             <div className="mt-4 flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
+
               <span className="text-[10px] font-bold text-white/60">
                 System connected
               </span>
