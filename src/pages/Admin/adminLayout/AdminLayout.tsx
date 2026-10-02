@@ -31,10 +31,7 @@ export default function AdminLayout({
                 replace: true,
             });
         } catch (err) {
-            console.error(
-                "ABSher Admin: Logout failed:",
-                err
-            );
+            console.error("ABSher Admin: Logout failed:", err);
         } finally {
             setLoggingOut(false);
             setLogoutOpen(false);
@@ -42,19 +39,15 @@ export default function AdminLayout({
     };
 
     return (
-        <div className="min-h-[100dvh] bg-[#F3F7F5] text-black">
-            {/* =====================================================
-          SIDEBAR
-      ====================================================== */}
+        <div className="min-h-screen bg-[#F3F7F5] text-black">
+            {/* SIDEBAR */}
             <AdminSidebar
                 mobileOpen={mobileSidebarOpen}
                 onClose={() => setMobileSidebarOpen(false)}
             />
 
-            {/* =====================================================
-          RIGHT SIDE CONTENT
-      ====================================================== */}
-            <div className="lg:pl-[270px]">
+            {/* ADMIN SCROLL AREA */}
+            <div className="lg:ml-[270px] lg:h-screen lg:overflow-y-auto admin-scrollbar">
                 {/* TOPBAR */}
                 <AdminTopbar
                     admin={admin}
@@ -70,9 +63,7 @@ export default function AdminLayout({
                 {children}
             </div>
 
-            {/* =====================================================
-          LOGOUT MODAL
-      ====================================================== */}
+            {/* LOGOUT MODAL */}
             <AdminLogoutModal
                 open={logoutOpen}
                 loading={loggingOut}

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   RefreshCw,
   Search,
@@ -42,6 +44,14 @@ export default function AllIqama() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
+
+  // ============================================================
+  // PAGINATION
+  // ============================================================
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 9;
 
   const fetchUsers = async () => {
     try {
@@ -125,10 +135,44 @@ export default function AllIqama() {
     });
   }, [iqamaUsers, search]);
 
+  // ============================================================
+  // RESET PAGINATION WHEN SEARCH CHANGES
+  // ============================================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  // ============================================================
+  // PAGINATED USERS
+  // ============================================================
+
+  const totalPages = Math.ceil(
+    filteredUsers.length / ITEMS_PER_PAGE
+  );
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex =
+      (currentPage - 1) * ITEMS_PER_PAGE;
+
+    return filteredUsers.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE
+    );
+  }, [filteredUsers, currentPage]);
+
+  // ============================================================
+  // REFRESH
+  // ============================================================
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchUsers();
   };
+
+  // ============================================================
+  // VIEW EMPLOYEE
+  // ============================================================
 
   const handleView = (employee: Employee) => {
     const id = employee.id || employee._id;
@@ -151,13 +195,16 @@ export default function AllIqama() {
         {/* =====================================================
             HEADER
         ====================================================== */}
+
         <div className="mb-2 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.035)]">
           <div className="p-4 sm:p-5 lg:p-6">
 
             {/* HEADER */}
+
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
               {/* LEFT */}
+
               <div>
                 <div className="mb-2 flex items-center gap-2">
 
@@ -183,9 +230,11 @@ export default function AllIqama() {
               </div>
 
               {/* RIGHT */}
+
               <div className="flex items-center gap-3">
 
                 {/* TOTAL */}
+
                 <div className="rounded-2xl border border-black/[0.05] bg-[#F9FBFA] px-5 py-3">
                   <p className="text-[9px] font-black uppercase tracking-[0.16em] text-black/30">
                     Total Iqama
@@ -199,6 +248,7 @@ export default function AllIqama() {
                 </div>
 
                 {/* REFRESH */}
+
                 <button
                   type="button"
                   onClick={handleRefresh}
@@ -223,6 +273,7 @@ export default function AllIqama() {
             </div>
 
             {/* SEARCH */}
+
             <div className="relative mt-6 max-w-full">
 
               <Search
@@ -258,6 +309,7 @@ export default function AllIqama() {
         {/* =====================================================
             ERROR
         ====================================================== */}
+
         {error && (
           <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4">
 
@@ -268,6 +320,7 @@ export default function AllIqama() {
               </div>
 
               <div>
+
                 <p className="text-sm font-black text-red-700">
                   Failed to load Iqama records
                 </p>
@@ -283,33 +336,37 @@ export default function AllIqama() {
                 >
                   Try again
                 </button>
+
               </div>
 
             </div>
+
           </div>
         )}
 
         {/* =====================================================
             LOADING
         ====================================================== */}
+
         {loading && (
           <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-[#F4F8F6] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.025)] sm:p-5 lg:p-6">
 
-            {/* SECTION HEADER SKELETON */}
             <div className="mb-5 flex items-center justify-between px-1">
 
               <div>
+
                 <div className="h-7 w-32 animate-pulse rounded-lg bg-black/[0.05]" />
 
                 <div className="mt-2 h-3 w-40 animate-pulse rounded bg-black/[0.04]" />
+
               </div>
 
               <div className="hidden h-8 w-20 animate-pulse rounded-xl bg-white sm:block" />
 
             </div>
 
-            {/* CARDS */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+
               {Array.from({
                 length: 6,
               }).map((_, index) => (
@@ -317,6 +374,7 @@ export default function AllIqama() {
                   key={index}
                 />
               ))}
+
             </div>
 
           </div>
@@ -325,6 +383,7 @@ export default function AllIqama() {
         {/* =====================================================
             EMPTY
         ====================================================== */}
+
         {!loading &&
           !error &&
           filteredUsers.length === 0 && (
@@ -352,14 +411,17 @@ export default function AllIqama() {
         {/* =====================================================
             IQAMA GRID
         ====================================================== */}
+
         {!loading &&
           filteredUsers.length > 0 && (
             <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-[#F4F8F6] p-4 shadow-[0_10px_40px_rgba(0,0,0,0.025)] sm:p-5 lg:p-6">
 
               {/* SECTION HEADER */}
+
               <div className="mb-5 flex items-center justify-between px-1">
 
                 <div>
+
                   <div className="flex items-center gap-2">
 
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E7F4EE] text-[#197653]">
@@ -379,6 +441,7 @@ export default function AllIqama() {
                       : "employee records"}{" "}
                     available
                   </p>
+
                 </div>
 
                 <div className="hidden rounded-xl border border-black/[0.05] bg-white px-3 py-2 sm:block">
@@ -390,9 +453,10 @@ export default function AllIqama() {
               </div>
 
               {/* IQAMA CARDS */}
+
               <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
 
-                {filteredUsers.map(
+                {paginatedUsers.map(
                   (employee) => (
                     <IqamaCard
                       key={
@@ -409,6 +473,122 @@ export default function AllIqama() {
                 )}
 
               </div>
+
+              {/* =================================================
+                  PAGINATION
+              ================================================== */}
+
+              {totalPages > 1 && (
+                <div className="mt-6 flex flex-col gap-3 border-t border-black/[0.05] pt-5 sm:flex-row sm:items-center sm:justify-between">
+
+                  <p className="text-xs font-semibold text-black/40">
+
+                    Showing{" "}
+
+                    <span className="font-black text-black/65">
+                      {(currentPage - 1) *
+                        ITEMS_PER_PAGE +
+                        1}
+                    </span>
+
+                    {" "}to{" "}
+
+                    <span className="font-black text-black/65">
+                      {Math.min(
+                        currentPage *
+                          ITEMS_PER_PAGE,
+                        filteredUsers.length
+                      )}
+                    </span>
+
+                    {" "}of{" "}
+
+                    <span className="font-black text-black/65">
+                      {filteredUsers.length}
+                    </span>
+
+                    {" "}Iqama records
+
+                  </p>
+
+                  <div className="flex items-center justify-center gap-1.5">
+
+                    {/* PREVIOUS */}
+
+                    <button
+                      type="button"
+                      disabled={
+                        currentPage === 1
+                      }
+                      onClick={() =>
+                        setCurrentPage(
+                          (page) =>
+                            Math.max(
+                              1,
+                              page - 1
+                            )
+                        )
+                      }
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-black/50 transition hover:bg-black/5 disabled:opacity-30"
+                    >
+                      <ChevronLeft
+                        size={16}
+                      />
+                    </button>
+
+                    {/* PAGE NUMBERS */}
+
+                    {Array.from(
+                      {
+                        length: totalPages,
+                      },
+                      (_, index) =>
+                        index + 1
+                    ).map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() =>
+                          setCurrentPage(page)
+                        }
+                        className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-black ${
+                          currentPage === page
+                            ? "bg-[#197653] text-white shadow-sm"
+                            : "border border-black/10 bg-white text-black/50 hover:bg-black/5"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    {/* NEXT */}
+
+                    <button
+                      type="button"
+                      disabled={
+                        currentPage ===
+                        totalPages
+                      }
+                      onClick={() =>
+                        setCurrentPage(
+                          (page) =>
+                            Math.min(
+                              totalPages,
+                              page + 1
+                            )
+                        )
+                      }
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-black/50 transition hover:bg-black/5 disabled:opacity-30"
+                    >
+                      <ChevronRight
+                        size={16}
+                      />
+                    </button>
+
+                  </div>
+
+                </div>
+              )}
 
             </div>
           )}
@@ -443,6 +623,7 @@ function IqamaCard({
     >
 
       {/* IMAGE */}
+
       <div className="relative h-[220px] overflow-hidden bg-[#E8EFEB]">
 
         {employee.iqamaImage &&
@@ -477,6 +658,7 @@ function IqamaCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/25 to-transparent" />
 
         {/* ACTIVE */}
+
         <div className="absolute left-4 top-4">
 
           <div className="flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-md">
@@ -496,9 +678,11 @@ function IqamaCard({
             </span>
 
           </div>
+
         </div>
 
         {/* ICON */}
+
         <div className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-black/45 shadow-sm backdrop-blur-md transition-all duration-300 group-hover:bg-white group-hover:text-[#197653]">
           <CreditCard size={16} />
         </div>
@@ -506,9 +690,11 @@ function IqamaCard({
       </div>
 
       {/* CONTENT */}
+
       <div className="p-5">
 
         {/* NUMBER */}
+
         <div className="flex items-start justify-between gap-3">
 
           <div className="min-w-0">
@@ -531,6 +717,7 @@ function IqamaCard({
         </div>
 
         {/* EMPLOYEE */}
+
         <div className="mt-5 border-t border-black/[0.05] pt-4">
 
           <div className="flex items-center gap-3">
@@ -574,6 +761,7 @@ function IqamaCard({
         </div>
 
         {/* FOOTER */}
+
         <div className="mt-5 flex items-center justify-between gap-3">
 
           <div className="flex min-w-0 items-center gap-2">
@@ -599,6 +787,7 @@ function IqamaCard({
         </div>
 
       </div>
+
     </button>
   );
 }
@@ -628,6 +817,7 @@ function IqamaCardSkeleton() {
         <div className="h-3 w-36 animate-pulse rounded bg-black/[0.04]" />
 
       </div>
+
     </div>
   );
 }

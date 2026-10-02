@@ -44,7 +44,7 @@ export default function Sessions() {
 
 
   const [activeTab, setActiveTab] =
-    useState<SessionTab>("all");
+    useState<SessionTab>("active");
 
   const [search, setSearch] =
     useState("");

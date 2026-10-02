@@ -245,7 +245,7 @@ export default function SessionDetails({
 
                 {/* Content */}
 
-                <div className="flex-1 overflow-y-auto px-5 py-6">
+                <div className="session-details-scrollbar flex-1 overflow-y-auto px-5 py-6">
                     {/* Profile */}
 
                     <div className="flex items-center gap-4">

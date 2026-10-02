@@ -9,14 +9,14 @@ const tabs: {
     id: SessionTab;
     label: string;
 }[] = [
-    { id: "all", label: "All" },
-    { id: "active", label: "Active" },
+    { id: "active", label: "Active Sessions" },
     { id: "logged_out", label: "Logged Out" },
     { id: "expired", label: "Expired" },
     { id: "revoked", label: "Revoked" },
     { id: "employees", label: "Employees" },
     { id: "admins", label: "Admins" },
     { id: "superadmins", label: "Super Admins" },
+    { id: "all", label: "All Sessions" },
 ];
 
 export default function SessionsTabs({
@@ -39,8 +39,8 @@ export default function SessionsTabs({
                             }
                             className={`rounded-xl px-4 py-2.5 text-xs font-black transition ${
                                 isActive
-                                    ? "bg-black text-white shadow-sm"
-                                    : "text-black/45 hover:bg-black/[0.04] hover:text-black"
+                                    ? "bg-[#197653] text-white shadow-sm"
+                                    : "text-black/45 hover:bg-[#197653]/[0.04] hover:text-black cursor-pointer"
                             }`}
                         >
                             {tab.label}
