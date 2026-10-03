@@ -339,7 +339,7 @@ export default function ViewUser() {
                                     {/* PROFILE PHOTO */}
                                     {/* ------------------------------------------------- */}
 
-                                    <div className="rounded-2xl border border-black/[0.055] bg-[#FAFBFA] p-4">
+                                    <div className="rounded-2xl border border-black/[0.055] bg-[#FAFBFA] h-fit p-4">
 
                                         <div className="mb-4 flex items-center justify-between gap-2">
 
@@ -361,7 +361,7 @@ export default function ViewUser() {
 
                                             {user.avatarUrl ? (
                                                 <img
-                                                    src={user.avatarUrl}
+                                                    src={user?.avatarUrl}
                                                     alt="Employee profile"
                                                     className="h-30 w-30 rounded-2xl object-cover shadow-[0_8px_25px_rgba(0,0,0,0.08)]"
                                                 />
