@@ -85,11 +85,23 @@ export default function AllIqama() {
   }, []);
 
   const iqamaUsers = useMemo(() => {
-    return users.filter(
-      (user) =>
-        Boolean(user.residentIdNumber) ||
-        Boolean(user.iqamaImage)
-    );
+    return [...users]
+      .filter(
+        (user) =>
+          Boolean(user.residentIdNumber) ||
+          Boolean(user.iqamaImage)
+      )
+      .sort((a, b) => {
+        const aTime = a.updatedAt
+          ? new Date(String(a.updatedAt)).getTime()
+          : 0;
+
+        const bTime = b.updatedAt
+          ? new Date(String(b.updatedAt)).getTime()
+          : 0;
+
+        return bTime - aTime;
+      });
   }, [users]);
 
   const filteredUsers = useMemo(() => {
@@ -496,7 +508,7 @@ export default function AllIqama() {
                     <span className="font-black text-black/65">
                       {Math.min(
                         currentPage *
-                          ITEMS_PER_PAGE,
+                        ITEMS_PER_PAGE,
                         filteredUsers.length
                       )}
                     </span>
@@ -551,11 +563,10 @@ export default function AllIqama() {
                         onClick={() =>
                           setCurrentPage(page)
                         }
-                        className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-black ${
-                          currentPage === page
+                        className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-black ${currentPage === page
                             ? "bg-[#197653] text-white shadow-sm"
                             : "border border-black/10 bg-white text-black/50 hover:bg-black/5"
-                        }`}
+                          }`}
                       >
                         {page}
                       </button>
@@ -627,7 +638,7 @@ function IqamaCard({
       <div className="relative h-[220px] overflow-hidden bg-[#E8EFEB]">
 
         {employee.iqamaImage &&
-        !imageError ? (
+          !imageError ? (
           <img
             src={employee.iqamaImage}
             alt={`${employee.name || "Employee"} Iqama`}
@@ -664,11 +675,10 @@ function IqamaCard({
           <div className="flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-md">
 
             <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                isActive
+              className={`h-1.5 w-1.5 rounded-full ${isActive
                   ? "bg-emerald-500"
                   : "bg-red-500"
-              }`}
+                }`}
             />
 
             <span className="text-[9px] font-black uppercase tracking-[0.12em] text-black/65">

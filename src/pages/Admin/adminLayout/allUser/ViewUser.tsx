@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { apiFetch, type Employee } from "../../../../api/api";
+import AdminPageLayout from '../../AdminPageLayout';
 
 interface UserResponse {
     user: Employee;
@@ -115,256 +116,101 @@ export default function ViewUser() {
     }
 
     return (
-        <div className="min-h-[100dvh] w-full bg-[#F5F8F6] text-black">
+        <AdminPageLayout>
+            <div className="view-user-scrollbar min-h-[100dvh] w-full bg-[#F5F8F6] text-black">
 
-            {/* ================================================================= */}
-            {/* HEADER */}
-            {/* ================================================================= */}
+                {/* ================================================================= */}
+                {/* HEADER */}
+                {/* ================================================================= */}
 
-            <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-white/95 backdrop-blur-xl">
-                <div className="flex w-full items-center justify-between gap-3 px-4 py-3.5 sm:px-6 lg:px-8 xl:px-10">
+                <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-white/95 backdrop-blur-xl">
+                    <div className="flex w-full items-center justify-between gap-3 px-4 py-3.5 sm:px-6 lg:px-8 xl:px-10">
 
-                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+
+                            <button
+                                type="button"
+                                onClick={() => navigate(-1)}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F3F6F4] text-black/70 transition hover:bg-[#E7F1EC] hover:text-black"
+                                aria-label="Back to dashboard"
+                            >
+                                <ArrowLeftIcon />
+                            </button>
+
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-brand-green sm:block">
+                                        Administration
+                                    </span>
+
+                                    <span className="hidden h-1 w-1 rounded-full bg-black/15 sm:block" />
+
+                                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-black/30">
+                                        Employee Profile
+                                    </span>
+                                </div>
+
+                                <h1 className="mt-0.5 truncate text-base font-black tracking-tight sm:text-lg">
+                                    {user.name || 'Unnamed Employee'}
+                                </h1>
+                            </div>
+                        </div>
 
                         <button
                             type="button"
-                            onClick={() => navigate(-1)}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F3F6F4] text-black/70 transition hover:bg-[#E7F1EC] hover:text-black"
-                            aria-label="Back to dashboard"
+                            onClick={() =>
+                                navigate(`/admin/users/${id}/edit`)
+                            }
+                            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-green px-3.5 py-2.5 text-xs font-black text-white shadow-[0_5px_18px_rgba(25,118,83,0.18)] transition hover:brightness-95 active:scale-[0.98] sm:px-5 sm:py-3 sm:text-sm"
                         >
-                            <ArrowLeftIcon />
+                            <EditIcon />
+                            <span>Edit User</span>
                         </button>
 
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                                <span className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-brand-green sm:block">
-                                    Administration
-                                </span>
-
-                                <span className="hidden h-1 w-1 rounded-full bg-black/15 sm:block" />
-
-                                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-black/30">
-                                    Employee Profile
-                                </span>
-                            </div>
-
-                            <h1 className="mt-0.5 truncate text-base font-black tracking-tight sm:text-lg">
-                                {user.name || 'Unnamed Employee'}
-                            </h1>
-                        </div>
                     </div>
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            navigate(`/admin/users/${id}/edit`)
-                        }
-                        className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-green px-3.5 py-2.5 text-xs font-black text-white shadow-[0_5px_18px_rgba(25,118,83,0.18)] transition hover:brightness-95 active:scale-[0.98] sm:px-5 sm:py-3 sm:text-sm"
-                    >
-                        <EditIcon />
-                        <span>Edit User</span>
-                    </button>
-
-                </div>
-            </header>
-
-            {/* ================================================================= */}
-            {/* MAIN */}
-            {/* ================================================================= */}
-
-            <main className="w-full px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8 xl:px-10">
+                </header>
 
                 {/* ================================================================= */}
-                {/* TOP EMPLOYEE + DOCUMENT HERO */}
+                {/* MAIN */}
                 {/* ================================================================= */}
 
-                <section className="relative overflow-hidden rounded-[28px] bg-white shadow-[0_12px_45px_rgba(0,0,0,0.055)] ring-1 ring-black/[0.035]">
+                <main className="w-full px-4 py-5 sm:px-4 sm:py-4 lg:px-4 lg:py-5 xl:px-5">
 
-                    {/* Decorative top area */}
+                    {/* ================================================================= */}
+                    {/* TOP EMPLOYEE + DOCUMENT HERO */}
+                    {/* ================================================================= */}
 
-                    <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-[#DFF1E8] via-[#EEF7F3] to-white" />
+                    <section className="relative overflow-hidden rounded-[28px] bg-white shadow-[0_12px_45px_rgba(0,0,0,0.055)] ring-1 ring-black/[0.035]">
 
-                    <div className="relative">
+                        {/* Decorative top area */}
 
-                        {/* ========================================================= */}
-                        {/* EMPLOYEE IDENTITY */}
-                        {/* ========================================================= */}
+                        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-[#DFF1E8] via-[#EEF7F3] to-white" />
 
-                        <div className="border-b border-black/[0.055] px-5 pb-6 pt-7 sm:px-7 lg:px-9">
+                        <div className="relative">
 
-                            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                            {/* ========================================================= */}
+                            {/* EMPLOYEE IDENTITY */}
+                            {/* ========================================================= */}
 
-                                {/* Small Profile Image */}
+                            <div className="border-b border-black/[0.055] px-5 pb-6 pt-7 sm:px-7 lg:px-9">
 
-                                <div className="relative shrink-0">
+                                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
 
-                                    {user.avatarUrl ? (
-                                        <img
-                                            src={user.avatarUrl}
-                                            alt={
-                                                user.name ||
-                                                'Employee'
-                                            }
-                                            className="h-20 w-20 rounded-2xl object-cover shadow-[0_8px_25px_rgba(0,0,0,0.12)] ring-4 ring-white sm:h-[88px] sm:w-[88px]"
-                                        />
-                                    ) : (
-                                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#DDEFE7] text-3xl font-black text-brand-green ring-4 ring-white sm:h-[88px] sm:w-[88px]">
-                                            {String(
-                                                user.name || 'U'
-                                            )
-                                                .trim()
-                                                .charAt(0)
-                                                .toUpperCase()}
-                                        </div>
-                                    )}
+                                    {/* Small Profile Image */}
 
-                                    <span
-                                        className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-white ${user.active === false
-                                            ? 'bg-red-500'
-                                            : 'bg-emerald-500'
-                                            }`}
-                                    />
-
-                                </div>
-
-                                {/* Employee information */}
-
-                                <div className="min-w-0 flex-1">
-
-                                    <div className="flex flex-wrap items-center gap-2.5">
-
-                                        <h2 className="text-2xl font-black tracking-tight sm:text-[28px]">
-                                            {user.name ||
-                                                'Unnamed User'}
-                                        </h2>
-
-                                        <span
-                                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${user.active === false
-                                                ? 'bg-red-50 text-red-600'
-                                                : 'bg-emerald-50 text-emerald-700'
-                                                }`}
-                                        >
-                                            <span
-                                                className={`h-1.5 w-1.5 rounded-full ${user.active === false
-                                                    ? 'bg-red-500'
-                                                    : 'bg-emerald-500'
-                                                    }`}
-                                            />
-
-                                            {user.active === false
-                                                ? 'Inactive'
-                                                : 'Active'}
-                                        </span>
-
-                                    </div>
-
-                                    <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
-
-                                        <div className="flex items-center gap-2 text-xs text-black/50">
-                                            <IdIcon />
-
-                                            <span className="font-mono font-bold">
-                                                {String(
-                                                    user.residentIdNumber ||
-                                                    '—'
-                                                )}
-                                            </span>
-                                        </div>
-
-                                        {user.nationality && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="hidden h-3 w-px bg-black/10 sm:block" />
-
-                                                <span className="text-xs font-bold text-black/40">
-                                                    {String(
-                                                        user.nationality
-                                                    )}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {user.occupation && (
-                                            <div className="flex items-center gap-2">
-                                                <span className="hidden h-3 w-px bg-black/10 sm:block" />
-
-                                                <span className="text-xs font-bold text-black/40">
-                                                    {String(
-                                                        user.occupation
-                                                    )}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        {/* ========================================================= */}
-                        {/* DOCUMENTS — TOP OF PAGE */}
-                        {/* ========================================================= */}
-
-                        <div className="px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
-
-                            <div className="mb-5 flex items-end justify-between gap-4">
-
-                                <div>
-                                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-brand-green">
-                                        Identity Documents
-                                    </p>
-
-                                    <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
-                                        Employee Documents
-                                    </h2>
-                                </div>
-
-                                <div className="hidden rounded-full bg-[#F1F6F3] px-3 py-1.5 text-[9px] font-black uppercase tracking-wide text-black/35 sm:block">
-                                    Digital Records
-                                </div>
-
-                            </div>
-
-                            {/* ===================================================== */}
-                            {/* DOCUMENT GRID */}
-                            {/* ===================================================== */}
-
-                            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-
-                                {/* ------------------------------------------------- */}
-                                {/* PROFILE PHOTO */}
-                                {/* ------------------------------------------------- */}
-
-                                <div className="rounded-2xl border border-black/[0.055] bg-[#FAFBFA] p-4">
-
-                                    <div className="mb-4 flex items-center justify-between gap-2">
-
-                                        <div>
-                                            <p className="text-xs font-black">
-                                                Profile Photo
-                                            </p>
-                                        </div>
-
-                                        {user.avatarUrl && (
-                                            <span className="rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-emerald-700">
-                                                Uploaded
-                                            </span>
-                                        )}
-
-                                    </div>
-
-                                    <div className="flex justify-center">
+                                    <div className="relative shrink-0">
 
                                         {user.avatarUrl ? (
                                             <img
                                                 src={user.avatarUrl}
-                                                alt="Employee profile"
-                                                className="h-30 w-30 rounded-2xl object-cover shadow-[0_8px_25px_rgba(0,0,0,0.08)]"
+                                                alt={
+                                                    user.name ||
+                                                    'Employee'
+                                                }
+                                                className="h-20 w-20 rounded-2xl object-cover shadow-[0_8px_25px_rgba(0,0,0,0.12)] ring-4 ring-white sm:h-[88px] sm:w-[88px]"
                                             />
                                         ) : (
-                                            <div className="flex h-40 w-40 items-center justify-center rounded-2xl bg-[#E2F0E9] text-5xl font-black text-brand-green">
+                                            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#DDEFE7] text-3xl font-black text-brand-green ring-4 ring-white sm:h-[88px] sm:w-[88px]">
                                                 {String(
                                                     user.name || 'U'
                                                 )
@@ -374,68 +220,219 @@ export default function ViewUser() {
                                             </div>
                                         )}
 
+                                        <span
+                                            className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-white ${user.active === false
+                                                ? 'bg-red-500'
+                                                : 'bg-emerald-500'
+                                                }`}
+                                        />
+
+                                    </div>
+
+                                    {/* Employee information */}
+
+                                    <div className="min-w-0 flex-1">
+
+                                        <div className="flex flex-wrap items-center gap-2.5">
+
+                                            <h2 className="text-2xl font-black tracking-tight sm:text-[28px]">
+                                                {user.name ||
+                                                    'Unnamed User'}
+                                            </h2>
+
+                                            <span
+                                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${user.active === false
+                                                    ? 'bg-red-50 text-red-600'
+                                                    : 'bg-emerald-50 text-emerald-700'
+                                                    }`}
+                                            >
+                                                <span
+                                                    className={`h-1.5 w-1.5 rounded-full ${user.active === false
+                                                        ? 'bg-red-500'
+                                                        : 'bg-emerald-500'
+                                                        }`}
+                                                />
+
+                                                {user.active === false
+                                                    ? 'Inactive'
+                                                    : 'Active'}
+                                            </span>
+
+                                        </div>
+
+                                        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+
+                                            <div className="flex items-center gap-2 text-xs text-black/50">
+                                                <IdIcon />
+
+                                                <span className="font-mono font-bold">
+                                                    {String(
+                                                        user.residentIdNumber ||
+                                                        '—'
+                                                    )}
+                                                </span>
+                                            </div>
+
+                                            {user.nationality && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="hidden h-3 w-px bg-black/10 sm:block" />
+
+                                                    <span className="text-xs font-bold text-black/40">
+                                                        {String(
+                                                            user.nationality
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {user.occupation && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="hidden h-3 w-px bg-black/10 sm:block" />
+
+                                                    <span className="text-xs font-bold text-black/40">
+                                                        {String(
+                                                            user.occupation
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                        </div>
+
                                     </div>
 
                                 </div>
 
-                                {/* ------------------------------------------------- */}
-                                {/* IQAMA */}
-                                {/* ------------------------------------------------- */}
+                            </div>
 
-                                <div className="rounded-2xl border border-black/[0.055] bg-white p-4 sm:p-5">
+                            {/* ========================================================= */}
+                            {/* DOCUMENTS — TOP OF PAGE */}
+                            {/* ========================================================= */}
 
-                                    <div className="mb-4 flex items-center justify-between gap-3">
+                            <div className="px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
 
-                                        <div>
-                                            <p className="text-xs font-black">
-                                                Iqama / Resident ID
-                                            </p>
+                                <div className="mb-5 flex items-end justify-between gap-4">
 
-                                            <p className="mt-0.5 text-[10px] font-medium text-black/30">
-                                                Resident identity document
-                                            </p>
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-brand-green">
+                                            Identity Documents
+                                        </p>
+
+                                        <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
+                                            Employee Documents
+                                        </h2>
+                                    </div>
+
+                                    <div className="hidden rounded-full bg-[#F1F6F3] px-3 py-1.5 text-[9px] font-black uppercase tracking-wide text-black/35 sm:block">
+                                        Digital Records
+                                    </div>
+
+                                </div>
+
+                                {/* ===================================================== */}
+                                {/* DOCUMENT GRID */}
+                                {/* ===================================================== */}
+
+                                <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+
+                                    {/* ------------------------------------------------- */}
+                                    {/* PROFILE PHOTO */}
+                                    {/* ------------------------------------------------- */}
+
+                                    <div className="rounded-2xl border border-black/[0.055] bg-[#FAFBFA] p-4">
+
+                                        <div className="mb-4 flex items-center justify-between gap-2">
+
+                                            <div>
+                                                <p className="text-xs font-black">
+                                                    Profile Photo
+                                                </p>
+                                            </div>
+
+                                            {user.avatarUrl && (
+                                                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-emerald-700">
+                                                    Uploaded
+                                                </span>
+                                            )}
+
                                         </div>
 
-                                        {user.iqamaImage && (
-                                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[8px] font-black uppercase tracking-wide text-emerald-700">
-                                                Uploaded
-                                            </span>
-                                        )}
+                                        <div className="flex justify-center">
+
+                                            {user.avatarUrl ? (
+                                                <img
+                                                    src={user.avatarUrl}
+                                                    alt="Employee profile"
+                                                    className="h-30 w-30 rounded-2xl object-cover shadow-[0_8px_25px_rgba(0,0,0,0.08)]"
+                                                />
+                                            ) : (
+                                                <div className="flex h-40 w-40 items-center justify-center rounded-2xl bg-[#E2F0E9] text-5xl font-black text-brand-green">
+                                                    {String(
+                                                        user.name || 'U'
+                                                    )
+                                                        .trim()
+                                                        .charAt(0)
+                                                        .toUpperCase()}
+                                                </div>
+                                            )}
+
+                                        </div>
 
                                     </div>
 
-                                    {/* 
-                                        IMPORTANT:
-                                        No artificial background.
-                                        No fixed width/height.
-                                        The image keeps its own aspect ratio.
-                                    */}
+                                    {/* ------------------------------------------------- */}
+                                    {/* IQAMA */}
+                                    {/* ------------------------------------------------- */}
 
-                                    {user.iqamaImage ? (
-                                        <div className="flex w-full items-center justify-center overflow-hidden">
+                                    <div className="rounded-2xl border border-black/[0.055] bg-white p-4 sm:p-5">
 
-                                            <img
-                                                src={user.iqamaImage}
-                                                alt="Iqama / Resident ID"
-                                                className="block h-auto w-auto max-h-[420px] max-w-full object-contain sm:max-h-[500px] lg:max-h-[300px] rounded-2xl"
-                                            />
+                                        <div className="mb-4 flex items-center justify-between gap-3">
 
-                                        </div>
-                                    ) : (
-                                        <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-dashed border-black/10">
-                                            <div className="text-center">
-
-                                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#F4F7F5] text-black/25">
-                                                    <ImageIcon />
-                                                </div>
-
-                                                <p className="mt-3 text-xs font-bold text-black/35">
-                                                    No Iqama image uploaded
+                                            <div>
+                                                <p className="text-xs font-black">
+                                                    Iqama / Resident ID
                                                 </p>
 
+                                                <p className="mt-0.5 text-[10px] font-medium text-black/30">
+                                                    Resident identity document
+                                                </p>
                                             </div>
+
+                                            {user.iqamaImage && (
+                                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[8px] font-black uppercase tracking-wide text-emerald-700">
+                                                    Uploaded
+                                                </span>
+                                            )}
+
                                         </div>
-                                    )}
+
+                                        {user.iqamaImage ? (
+                                            <div className="flex w-full items-center justify-center overflow-hidden">
+
+                                                <img
+                                                    src={user.iqamaImage}
+                                                    alt="Iqama / Resident ID"
+                                                    className="block h-auto w-auto max-h-[420px] max-w-full object-contain sm:max-h-[500px] lg:max-h-[300px] rounded-2xl"
+                                                />
+
+                                            </div>
+                                        ) : (
+                                            <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-dashed border-black/10">
+                                                <div className="text-center">
+
+                                                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#F4F7F5] text-black/25">
+                                                        <ImageIcon />
+                                                    </div>
+
+                                                    <p className="mt-3 text-xs font-bold text-black/35">
+                                                        No Iqama image uploaded
+                                                    </p>
+
+                                                </div>
+                                            </div>
+                                        )}
+
+                                    </div>
 
                                 </div>
 
@@ -443,295 +440,294 @@ export default function ViewUser() {
 
                         </div>
 
-                    </div>
+                    </section>
 
-                </section>
+                    {/* ================================================================= */}
+                    {/* CONTENT */}
+                    {/* ================================================================= */}
 
-                {/* ================================================================= */}
-                {/* CONTENT */}
-                {/* ================================================================= */}
+                    <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
 
-                <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+                        {/* ============================================================= */}
+                        {/* LEFT */}
+                        {/* ============================================================= */}
 
-                    {/* ============================================================= */}
-                    {/* LEFT */}
-                    {/* ============================================================= */}
+                        <div className="min-w-0 space-y-5">
 
-                    <div className="min-w-0 space-y-5">
+                            {/* BASIC INFORMATION */}
 
-                        {/* BASIC INFORMATION */}
-
-                        <InfoSection
-                            eyebrow="Personal"
-                            title="Basic Information"
-                            icon={<UserIcon />}
-                        >
-                            <InfoGrid
-                                items={[
-                                    [
-                                        'Full Name',
-                                        user.name,
-                                    ],
-                                    [
-                                        'Resident ID / Iqama',
-                                        user.residentIdNumber,
-                                        true,
-                                    ],
-                                    [
-                                        'ID Version',
-                                        user.idVersion,
-                                    ],
-                                    [
-                                        'Nationality',
-                                        user.nationality,
-                                    ],
-                                    [
-                                        'Birth City',
-                                        user.birthCity,
-                                    ],
-                                    [
-                                        'Birth Country',
-                                        user.birthCountry,
-                                    ],
-                                    [
-                                        'Date of Birth',
-                                        user.dateOfBirth,
-                                    ],
-                                    [
-                                        'Marital Status',
-                                        user.maritalStatus,
-                                    ],
-                                    [
-                                        'Religion',
-                                        user.religion,
-                                    ],
-                                    [
-                                        'Sponsorship Transfers',
-                                        user.sponsorshipTransfers,
-                                    ],
-                                ]}
-                            />
-                        </InfoSection>
-
-                        {/* EMPLOYMENT */}
-
-                        <InfoSection
-                            eyebrow="Employment"
-                            title="Work Information"
-                            icon={<BriefcaseIcon />}
-                        >
-                            <InfoGrid
-                                items={[
-                                    [
-                                        'Occupation',
-                                        user.occupation,
-                                    ],
-                                    [
-                                        'Employer',
-                                        user.employer,
-                                    ],
-                                    [
-                                        'Employer ID Number',
-                                        user.employerIdNumber,
-                                        true,
-                                    ],
-                                    [
-                                        'Work Permit',
-                                        user.workPermit,
-                                    ],
-                                    [
-                                        'Issue Place',
-                                        user.issuePlace,
-                                    ],
-                                    [
-                                        'Resident ID Issue Date',
-                                        user.residentIdIssueDate,
-                                    ],
-                                    [
-                                        'Resident ID Expiry',
-                                        user.residentIdExpiry,
-                                    ],
-                                    [
-                                        'Sponsor Name',
-                                        user.sponsorName,
-                                    ],
-                                    [
-                                        'Sponsor ID Number',
-                                        user.sponsorIdNumber,
-                                        true,
-                                    ],
-                                ]}
-                            />
-                        </InfoSection>
-
-                        {/* PASSPORT */}
-
-                        <InfoSection
-                            eyebrow="Identity Document"
-                            title="Passport Information"
-                            icon={<PassportIcon />}
-                        >
-                            <InfoGrid
-                                items={[
-                                    [
-                                        'Passport Number',
-                                        user.passport?.passportNumber,
-                                        true,
-                                    ],
-                                    [
-                                        'Type',
-                                        user.passport?.type,
-                                    ],
-                                    [
-                                        'Issuing Date',
-                                        user.passport?.issuingDate,
-                                    ],
-                                    [
-                                        'Expiry Date',
-                                        user.passport?.expiryDate,
-                                    ],
-                                    [
-                                        'Issuing City',
-                                        user.passport?.issuingCity,
-                                    ],
-                                    [
-                                        'Status',
-                                        user.passport?.status,
-                                    ],
-                                    [
-                                        'Amount Deposit',
-                                        user.passport?.amountDeposit,
-                                    ],
-                                ]}
-                            />
-                        </InfoSection>
-
-                        {/* HAJJ */}
-
-                        <InfoSection
-                            eyebrow="Religious Information"
-                            title="Hajj Information"
-                            icon={<HajjIcon />}
-                        >
-                            <InfoGrid
-                                items={[
-                                    [
-                                        'Hajj Status',
-                                        user.hajjDetails?.status,
-                                    ],
-                                    [
-                                        'Last Hajj Year',
-                                        user.hajjDetails?.lastHajjYear,
-                                    ],
-                                ]}
-                            />
-                        </InfoSection>
-
-                        {/* HEALTH INSURANCE */}
-
-                        {user.healthInsurance && (
                             <InfoSection
-                                eyebrow="Insurance"
-                                title="Health Insurance"
-                                icon={<ShieldIcon />}
+                                eyebrow="Personal"
+                                title="Basic Information"
+                                icon={<UserIcon />}
                             >
-                                <ObjectInfo
-                                    value={user.healthInsurance}
+                                <InfoGrid
+                                    items={[
+                                        [
+                                            'Full Name',
+                                            user.name,
+                                        ],
+                                        [
+                                            'Resident ID / Iqama',
+                                            user.residentIdNumber,
+                                            true,
+                                        ],
+                                        [
+                                            'ID Version',
+                                            user.idVersion,
+                                        ],
+                                        [
+                                            'Nationality',
+                                            user.nationality,
+                                        ],
+                                        [
+                                            'Birth City',
+                                            user.birthCity,
+                                        ],
+                                        [
+                                            'Birth Country',
+                                            user.birthCountry,
+                                        ],
+                                        [
+                                            'Date of Birth',
+                                            user.dateOfBirth,
+                                        ],
+                                        [
+                                            'Marital Status',
+                                            user.maritalStatus,
+                                        ],
+                                        [
+                                            'Religion',
+                                            user.religion,
+                                        ],
+                                        [
+                                            'Sponsorship Transfers',
+                                            user.sponsorshipTransfers,
+                                        ],
+                                    ]}
                                 />
                             </InfoSection>
-                        )}
+
+                            {/* EMPLOYMENT */}
+
+                            <InfoSection
+                                eyebrow="Employment"
+                                title="Work Information"
+                                icon={<BriefcaseIcon />}
+                            >
+                                <InfoGrid
+                                    items={[
+                                        [
+                                            'Occupation',
+                                            user.occupation,
+                                        ],
+                                        [
+                                            'Employer',
+                                            user.employer,
+                                        ],
+                                        [
+                                            'Employer ID Number',
+                                            user.employerIdNumber,
+                                            true,
+                                        ],
+                                        [
+                                            'Work Permit',
+                                            user.workPermit,
+                                        ],
+                                        [
+                                            'Issue Place',
+                                            user.issuePlace,
+                                        ],
+                                        [
+                                            'Resident ID Issue Date',
+                                            user.residentIdIssueDate,
+                                        ],
+                                        [
+                                            'Resident ID Expiry',
+                                            user.residentIdExpiry,
+                                        ],
+                                        [
+                                            'Sponsor Name',
+                                            user.sponsorName,
+                                        ],
+                                        [
+                                            'Sponsor ID Number',
+                                            user.sponsorIdNumber,
+                                            true,
+                                        ],
+                                    ]}
+                                />
+                            </InfoSection>
+
+                            {/* PASSPORT */}
+
+                            <InfoSection
+                                eyebrow="Identity Document"
+                                title="Passport Information"
+                                icon={<PassportIcon />}
+                            >
+                                <InfoGrid
+                                    items={[
+                                        [
+                                            'Passport Number',
+                                            user.passport?.passportNumber,
+                                            true,
+                                        ],
+                                        [
+                                            'Type',
+                                            user.passport?.type,
+                                        ],
+                                        [
+                                            'Issuing Date',
+                                            user.passport?.issuingDate,
+                                        ],
+                                        [
+                                            'Expiry Date',
+                                            user.passport?.expiryDate,
+                                        ],
+                                        [
+                                            'Issuing City',
+                                            user.passport?.issuingCity,
+                                        ],
+                                        [
+                                            'Status',
+                                            user.passport?.status,
+                                        ],
+                                        [
+                                            'Amount Deposit',
+                                            user.passport?.amountDeposit,
+                                        ],
+                                    ]}
+                                />
+                            </InfoSection>
+
+                            {/* HAJJ */}
+
+                            <InfoSection
+                                eyebrow="Religious Information"
+                                title="Hajj Information"
+                                icon={<HajjIcon />}
+                            >
+                                <InfoGrid
+                                    items={[
+                                        [
+                                            'Hajj Status',
+                                            user.hajjDetails?.status,
+                                        ],
+                                        [
+                                            'Last Hajj Year',
+                                            user.hajjDetails?.lastHajjYear,
+                                        ],
+                                    ]}
+                                />
+                            </InfoSection>
+
+                            {/* HEALTH INSURANCE */}
+
+                            {user.healthInsurance && (
+                                <InfoSection
+                                    eyebrow="Insurance"
+                                    title="Health Insurance"
+                                    icon={<ShieldIcon />}
+                                >
+                                    <ObjectInfo
+                                        value={user.healthInsurance}
+                                    />
+                                </InfoSection>
+                            )}
+
+                        </div>
+
+                        {/* ============================================================= */}
+                        {/* RIGHT */}
+                        {/* ============================================================= */}
+
+                        <aside className="min-w-0 space-y-5">
+
+                            {/* ACCOUNT STATUS */}
+
+                            <section className="rounded-3xl bg-white p-5 shadow-[0_8px_35px_rgba(0,0,0,0.045)] ring-1 ring-black/[0.03] sm:p-6">
+
+                                <SectionHeading
+                                    eyebrow="Account"
+                                    title="Account Status"
+                                    icon={<ShieldIcon />}
+                                />
+
+                                <div className="mt-5 space-y-2.5">
+
+                                    <StatusRow
+                                        label="Account Status"
+                                        value={
+                                            user.active === false
+                                                ? 'Inactive'
+                                                : 'Active'
+                                        }
+                                        active={
+                                            user.active !== false
+                                        }
+                                    />
+
+                                    <StatusRow
+                                        label="Resident ID"
+                                        value={
+                                            user.residentIdNumber
+                                                ? 'Available'
+                                                : 'Missing'
+                                        }
+                                        active={
+                                            !!user.residentIdNumber
+                                        }
+                                    />
+
+                                    <StatusRow
+                                        label="Profile Photo"
+                                        value={
+                                            user.avatarUrl
+                                                ? 'Uploaded'
+                                                : 'Not uploaded'
+                                        }
+                                        active={
+                                            !!user.avatarUrl
+                                        }
+                                    />
+
+                                    <StatusRow
+                                        label="Iqama Image"
+                                        value={
+                                            user.iqamaImage
+                                                ? 'Uploaded'
+                                                : 'Not uploaded'
+                                        }
+                                        active={
+                                            !!user.iqamaImage
+                                        }
+                                    />
+
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        navigate(
+                                            `/admin/users/${id}/edit`
+                                        )
+                                    }
+                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green px-4 py-3 text-sm font-black text-white shadow-[0_6px_18px_rgba(25,118,83,0.16)] transition hover:brightness-95 active:scale-[0.99]"
+                                >
+                                    <EditIcon />
+                                    Edit Employee
+                                </button>
+
+                            </section>
+
+                        </aside>
 
                     </div>
 
-                    {/* ============================================================= */}
-                    {/* RIGHT */}
-                    {/* ============================================================= */}
-
-                    <aside className="min-w-0 space-y-5">
-
-                        {/* ACCOUNT STATUS */}
-
-                        <section className="rounded-3xl bg-white p-5 shadow-[0_8px_35px_rgba(0,0,0,0.045)] ring-1 ring-black/[0.03] sm:p-6">
-
-                            <SectionHeading
-                                eyebrow="Account"
-                                title="Account Status"
-                                icon={<ShieldIcon />}
-                            />
-
-                            <div className="mt-5 space-y-2.5">
-
-                                <StatusRow
-                                    label="Account Status"
-                                    value={
-                                        user.active === false
-                                            ? 'Inactive'
-                                            : 'Active'
-                                    }
-                                    active={
-                                        user.active !== false
-                                    }
-                                />
-
-                                <StatusRow
-                                    label="Resident ID"
-                                    value={
-                                        user.residentIdNumber
-                                            ? 'Available'
-                                            : 'Missing'
-                                    }
-                                    active={
-                                        !!user.residentIdNumber
-                                    }
-                                />
-
-                                <StatusRow
-                                    label="Profile Photo"
-                                    value={
-                                        user.avatarUrl
-                                            ? 'Uploaded'
-                                            : 'Not uploaded'
-                                    }
-                                    active={
-                                        !!user.avatarUrl
-                                    }
-                                />
-
-                                <StatusRow
-                                    label="Iqama Image"
-                                    value={
-                                        user.iqamaImage
-                                            ? 'Uploaded'
-                                            : 'Not uploaded'
-                                    }
-                                    active={
-                                        !!user.iqamaImage
-                                    }
-                                />
-
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(
-                                        `/admin/users/${id}/edit`
-                                    )
-                                }
-                                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green px-4 py-3 text-sm font-black text-white shadow-[0_6px_18px_rgba(25,118,83,0.16)] transition hover:brightness-95 active:scale-[0.99]"
-                            >
-                                <EditIcon />
-                                Edit Employee
-                            </button>
-
-                        </section>
-
-                    </aside>
-
-                </div>
-
-            </main>
-        </div>
+                </main>
+            </div>
+        </AdminPageLayout>
     );
 }
 
@@ -954,11 +950,102 @@ function formatValue(value: unknown): string {
         return '—';
     }
 
+    if (value instanceof Date) {
+        return formatDateValue(value);
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+
+        if (isDateLike(trimmed)) {
+            return formatDateValue(trimmed);
+        }
+
+        return trimmed;
+    }
+
     if (typeof value === 'object') {
         return JSON.stringify(value);
     }
 
     return String(value);
+}
+
+// ============================================================================
+// DATE FORMATTER
+// ============================================================================
+
+function isDateLike(value: string): boolean {
+    // YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss...
+    if (/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value)) {
+        return true;
+    }
+
+    // DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY
+    if (/^\d{2}[-/.]\d{2}[-/]\d{4}$/.test(value)) {
+        return true;
+    }
+
+    // YYYY/MM/DD or YYYY.MM.DD
+    if (/^\d{4}[/.]\d{2}[/.]\d{2}$/.test(value)) {
+        return true;
+    }
+
+    return false;
+}
+
+function formatDateValue(value: unknown): string {
+    if (!value) return "—";
+
+    const stringValue = String(value).trim();
+
+    if (!stringValue) return "—";
+
+    let date: Date;
+
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) {
+        const [year, month, day] = stringValue.split("-").map(Number);
+
+        // Create local date to avoid timezone shifting
+        date = new Date(year, month - 1, day);
+    }
+
+    // DD-MM-YYYY
+    else if (/^\d{2}-\d{2}-\d{4}$/.test(stringValue)) {
+        const [day, month, year] = stringValue.split("-").map(Number);
+
+        date = new Date(year, month - 1, day);
+    }
+
+    // DD/MM/YYYY
+    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(stringValue)) {
+        const [day, month, year] = stringValue.split("/").map(Number);
+
+        date = new Date(year, month - 1, day);
+    }
+
+    // YYYY/MM/DD
+    else if (/^\d{4}\/\d{2}\/\d{2}$/.test(stringValue)) {
+        const [year, month, day] = stringValue.split("/").map(Number);
+
+        date = new Date(year, month - 1, day);
+    }
+
+    // ISO timestamp
+    else {
+        date = new Date(stringValue);
+    }
+
+    if (Number.isNaN(date.getTime())) {
+        return stringValue;
+    }
+
+    return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    }).format(date);
 }
 
 // ============================================================================

@@ -5,6 +5,7 @@ import {
     type FormEvent,
     type ReactNode,
 } from "react";
+
 import {
     ArrowLeft,
     Eye,
@@ -24,8 +25,20 @@ import {
     X,
     AlertCircle,
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
-import { apiFetch, apiUpload, type Employee } from "../../../../api/api";
+
+import {
+    apiFetch,
+    apiUpload,
+    type Employee,
+} from "../../../../api/api";
+
+import AdminPageLayout from "../../AdminPageLayout";
+
+// ============================================================================
+// FORM DATA
+// ============================================================================
 
 interface FormData {
     name: string;
@@ -105,6 +118,256 @@ const initialForm: FormData = {
     password: "",
 };
 
+// ============================================================================
+// DATE HELPERS
+// ============================================================================
+//
+// DATABASE / API STANDARD:
+//
+//     DD MMM YYYY
+//
+// Example:
+//
+//     10 Oct 2026
+//
+// IMPORTANT:
+//
+// HTML <input type="date"> requires:
+//
+//     YYYY-MM-DD
+//
+// Therefore the form internally uses YYYY-MM-DD,
+// but before sending data to the backend we convert it to:
+//
+//     DD MMM YYYY
+//
+// ============================================================================
+
+function parseDateParts(value: unknown): {
+    year: number;
+    month: number;
+    day: number;
+} | null {
+    if (!value) {
+        return null;
+    }
+
+    const stringValue = String(value).trim();
+
+    if (!stringValue) {
+        return null;
+    }
+
+    // ------------------------------------------------------------------------
+    // YYYY-MM-DD
+    // Example: 2026-10-10
+    // ------------------------------------------------------------------------
+
+    let match = stringValue.match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+    if (match) {
+        return {
+            year: Number(match[1]),
+            month: Number(match[2]),
+            day: Number(match[3]),
+        };
+    }
+
+    // ------------------------------------------------------------------------
+    // ISO DATE / DATETIME
+    // Example: 2026-10-10T00:00:00.000Z
+    // ------------------------------------------------------------------------
+
+    match = stringValue.match(
+        /^(\d{4})-(\d{2})-(\d{2})T/
+    );
+
+    if (match) {
+        return {
+            year: Number(match[1]),
+            month: Number(match[2]),
+            day: Number(match[3]),
+        };
+    }
+
+    // ------------------------------------------------------------------------
+    // DD-MM-YYYY
+    // Example: 10-10-2026
+    // ------------------------------------------------------------------------
+
+    match = stringValue.match(
+        /^(\d{2})-(\d{2})-(\d{4})$/
+    );
+
+    if (match) {
+        return {
+            year: Number(match[3]),
+            month: Number(match[2]),
+            day: Number(match[1]),
+        };
+    }
+
+    // ------------------------------------------------------------------------
+    // DD/MM/YYYY
+    // Example: 10/10/2026
+    // ------------------------------------------------------------------------
+
+    match = stringValue.match(
+        /^(\d{2})\/(\d{2})\/(\d{4})$/
+    );
+
+    if (match) {
+        return {
+            year: Number(match[3]),
+            month: Number(match[2]),
+            day: Number(match[1]),
+        };
+    }
+
+    // ------------------------------------------------------------------------
+    // YYYY/MM/DD
+    // Example: 2026/10/10
+    // ------------------------------------------------------------------------
+
+    match = stringValue.match(
+        /^(\d{4})\/(\d{2})\/(\d{2})$/
+    );
+
+    if (match) {
+        return {
+            year: Number(match[1]),
+            month: Number(match[2]),
+            day: Number(match[3]),
+        };
+    }
+
+    // ------------------------------------------------------------------------
+    // DD MMM YYYY
+    // Example: 10 Oct 2026
+    // ------------------------------------------------------------------------
+
+    match = stringValue.match(
+        /^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/
+    );
+
+    if (match) {
+        const monthMap: Record<string, number> = {
+            jan: 1,
+            january: 1,
+
+            feb: 2,
+            february: 2,
+
+            mar: 3,
+            march: 3,
+
+            apr: 4,
+            april: 4,
+
+            may: 5,
+
+            jun: 6,
+            june: 6,
+
+            jul: 7,
+            july: 7,
+
+            aug: 8,
+            august: 8,
+
+            sep: 9,
+            sept: 9,
+            september: 9,
+
+            oct: 10,
+            october: 10,
+
+            nov: 11,
+            november: 11,
+
+            dec: 12,
+            december: 12,
+        };
+
+        const month =
+            monthMap[match[2].toLowerCase()];
+
+        if (month) {
+            return {
+                year: Number(match[3]),
+                month,
+                day: Number(match[1]),
+            };
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Final fallback
+    // ------------------------------------------------------------------------
+
+    const date = new Date(stringValue);
+
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    return {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+    };
+}
+
+// ============================================================================
+// FORMAT DATE FOR STORAGE
+// ============================================================================
+//
+// Input:
+//     2026-10-10
+//
+// Output:
+//     10 Oct 2026
+//
+// ============================================================================
+
+function formatDateForStorage(
+    value: unknown
+): string {
+    const parts = parseDateParts(value);
+
+    if (!parts) {
+        return "";
+    }
+
+    const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ];
+
+    return `${String(parts.day).padStart(
+        2,
+        "0"
+    )} ${monthNames[parts.month - 1]} ${
+        parts.year
+    }`;
+}
+
+// ============================================================================
+// SECTION
+// ============================================================================
+
 interface SectionProps {
     icon: ReactNode;
     title: string;
@@ -136,17 +399,25 @@ function Section({
                 </div>
             </div>
 
-            <div className="p-6">{children}</div>
+            <div className="p-6">
+                {children}
+            </div>
         </section>
     );
 }
+
+// ============================================================================
+// FIELD
+// ============================================================================
 
 interface FieldProps {
     label: string;
     required?: boolean;
     value: string;
     onChange: (
-        e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+        e: ChangeEvent<
+            HTMLInputElement | HTMLSelectElement
+        >
     ) => void;
     name: string;
     placeholder?: string;
@@ -173,7 +444,9 @@ function Field({
                 {label}
 
                 {required && (
-                    <span className="ml-1 text-red-500">*</span>
+                    <span className="ml-1 text-red-500">
+                        *
+                    </span>
                 )}
             </label>
 
@@ -190,6 +463,10 @@ function Field({
         </div>
     );
 }
+
+// ============================================================================
+// SELECT FIELD
+// ============================================================================
 
 interface SelectFieldProps {
     label: string;
@@ -219,7 +496,9 @@ function SelectField({
                 {label}
 
                 {required && (
-                    <span className="ml-1 text-red-500">*</span>
+                    <span className="ml-1 text-red-500">
+                        *
+                    </span>
                 )}
             </label>
 
@@ -236,6 +515,10 @@ function SelectField({
         </div>
     );
 }
+
+// ============================================================================
+// IMAGE UPLOAD
+// ============================================================================
 
 interface ImageUploadProps {
     title: string;
@@ -353,6 +636,10 @@ function ImageUpload({
     );
 }
 
+// ============================================================================
+// CREATE USER
+// ============================================================================
+
 export default function CreateUser() {
     const navigate = useNavigate();
 
@@ -374,14 +661,14 @@ export default function CreateUser() {
     const [showPassword, setShowPassword] =
         useState(false);
 
+    const [confirmPassword, setConfirmPassword] =
+        useState("");
+
     const [submitting, setSubmitting] =
         useState(false);
 
-    const [error, setError] =
-        useState("");
-
-    const [success, setSuccess] =
-        useState("");
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
     const [showSuccessModal, setShowSuccessModal] =
         useState(false);
@@ -392,12 +679,15 @@ export default function CreateUser() {
     const [createdUserId, setCreatedUserId] =
         useState("");
 
-    // ========================================================================
-    // AUTO REDIRECT AFTER SUCCESS
-    // ========================================================================
+    // =========================================================================
+    // SUCCESS REDIRECT
+    // =========================================================================
 
     useEffect(() => {
-        if (!showSuccessModal || !createdUserId) {
+        if (
+            !showSuccessModal ||
+            !createdUserId
+        ) {
             return;
         }
 
@@ -416,9 +706,9 @@ export default function CreateUser() {
         navigate,
     ]);
 
-    // ========================================================================
+    // =========================================================================
     // FORM CHANGE
-    // ========================================================================
+    // =========================================================================
 
     const handleChange = (
         e: ChangeEvent<
@@ -436,9 +726,9 @@ export default function CreateUser() {
         setSuccess("");
     };
 
-    // ========================================================================
+    // =========================================================================
     // AVATAR CHANGE
-    // ========================================================================
+    // =========================================================================
 
     const handleAvatarChange = (
         e: ChangeEvent<HTMLInputElement>
@@ -448,7 +738,9 @@ export default function CreateUser() {
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
-            setError("Please select a valid image file.");
+            setError(
+                "Please select a valid image file."
+            );
             setShowErrorModal(true);
             return;
         }
@@ -471,9 +763,9 @@ export default function CreateUser() {
         setSuccess("");
     };
 
-    // ========================================================================
+    // =========================================================================
     // IQAMA CHANGE
-    // ========================================================================
+    // =========================================================================
 
     const handleIqamaChange = (
         e: ChangeEvent<HTMLInputElement>
@@ -483,7 +775,9 @@ export default function CreateUser() {
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
-            setError("Please select a valid image file.");
+            setError(
+                "Please select a valid image file."
+            );
             setShowErrorModal(true);
             return;
         }
@@ -506,27 +800,23 @@ export default function CreateUser() {
         setSuccess("");
     };
 
-    // ========================================================================
-    // REMOVE AVATAR
-    // ========================================================================
+    // =========================================================================
+    // REMOVE IMAGES
+    // =========================================================================
 
     const removeAvatar = () => {
         setAvatarFile(null);
         setAvatarPreview("");
     };
 
-    // ========================================================================
-    // REMOVE IQAMA
-    // ========================================================================
-
     const removeIqama = () => {
         setIqamaFile(null);
         setIqamaPreview("");
     };
 
-    // ========================================================================
-    // RESET FORM
-    // ========================================================================
+    // =========================================================================
+    // RESET
+    // =========================================================================
 
     const resetForm = () => {
         setForm({ ...initialForm });
@@ -537,14 +827,16 @@ export default function CreateUser() {
         setAvatarPreview("");
         setIqamaPreview("");
 
+        setConfirmPassword("");
+
         setError("");
         setSuccess("");
         setShowErrorModal(false);
     };
 
-    // ========================================================================
-    // UPLOAD IMAGE
-    // ========================================================================
+    // =========================================================================
+    // IMAGE UPLOAD
+    // =========================================================================
 
     const uploadImage = async (
         userId: string,
@@ -562,14 +854,31 @@ export default function CreateUser() {
         );
     };
 
-    // ========================================================================
+    // =========================================================================
     // SUBMIT
-    // ========================================================================
+    // =========================================================================
 
     const handleSubmit = async (
         e: FormEvent<HTMLFormElement>
     ) => {
         e.preventDefault();
+
+        // ---------------------------------------------------------------------
+        // PASSWORD CHECK
+        // ---------------------------------------------------------------------
+
+        if (
+            form.password !==
+            confirmPassword
+        ) {
+            setError(
+                "Password and confirm password do not match."
+            );
+
+            setShowErrorModal(true);
+
+            return;
+        }
 
         setSubmitting(true);
         setError("");
@@ -577,9 +886,28 @@ export default function CreateUser() {
         setShowErrorModal(false);
 
         try {
-            // ==============================================================
-            // CREATE EMPLOYEE PAYLOAD
-            // ==============================================================
+            // =================================================================
+            // PAYLOAD
+            // =================================================================
+            //
+            // IMPORTANT:
+            //
+            // The form date values are YYYY-MM-DD because
+            // HTML date inputs require that format.
+            //
+            // Before sending to API, every business date is converted to:
+            //
+            //     DD MMM YYYY
+            //
+            // Example:
+            //
+            //     2026-10-10
+            //
+            // becomes:
+            //
+            //     10 Oct 2026
+            //
+            // =================================================================
 
             const payload = {
                 name: form.name.trim(),
@@ -599,19 +927,30 @@ export default function CreateUser() {
                 birthCountry:
                     form.birthCountry.trim(),
 
+                // -------------------------------------------------------------
+                // PERSONAL DATE
+                // -------------------------------------------------------------
+
                 dateOfBirth:
-                    form.dateOfBirth,
+                    formatDateForStorage(
+                        form.dateOfBirth
+                    ),
 
                 maritalStatus:
                     form.maritalStatus,
 
                 sponsorshipTransfers:
                     Number(
-                        form.sponsorshipTransfers || 0
+                        form.sponsorshipTransfers ||
+                            0
                     ),
 
                 religion:
                     form.religion.trim(),
+
+                // -------------------------------------------------------------
+                // EMPLOYMENT
+                // -------------------------------------------------------------
 
                 occupation:
                     form.occupation.trim(),
@@ -628,17 +967,29 @@ export default function CreateUser() {
                 workPermit:
                     form.workPermit.trim(),
 
+                // -------------------------------------------------------------
+                // RESIDENT ID DATES
+                // -------------------------------------------------------------
+
                 residentIdIssueDate:
-                    form.residentIdIssueDate,
+                    formatDateForStorage(
+                        form.residentIdIssueDate
+                    ),
 
                 residentIdExpiry:
-                    form.residentIdExpiry,
+                    formatDateForStorage(
+                        form.residentIdExpiry
+                    ),
 
                 sponsorName:
                     form.sponsorName.trim(),
 
                 sponsorIdNumber:
                     form.sponsorIdNumber.trim(),
+
+                // -------------------------------------------------------------
+                // PASSPORT
+                // -------------------------------------------------------------
 
                 passport: {
                     passportNumber:
@@ -648,10 +999,14 @@ export default function CreateUser() {
                         form.passportType,
 
                     issuingDate:
-                        form.passportIssuingDate,
+                        formatDateForStorage(
+                            form.passportIssuingDate
+                        ),
 
                     expiryDate:
-                        form.passportExpiryDate,
+                        formatDateForStorage(
+                            form.passportExpiryDate
+                        ),
 
                     issuingCity:
                         form.passportIssuingCity.trim(),
@@ -663,29 +1018,47 @@ export default function CreateUser() {
                         form.amountDeposit.trim(),
                 },
 
+                // -------------------------------------------------------------
+                // HAJJ
+                // -------------------------------------------------------------
+
                 hajjDetails: {
                     status:
                         form.hajjStatus,
 
+                    // This is a YEAR only.
+                    // Keep it exactly as entered.
                     lastHajjYear:
                         form.lastHajjYear.trim(),
                 },
 
+                // -------------------------------------------------------------
+                // HEALTH INSURANCE
+                // -------------------------------------------------------------
+
                 healthInsurance: {
                     issuingDate:
-                        form.insuranceIssuingDate,
+                        formatDateForStorage(
+                            form.insuranceIssuingDate
+                        ),
 
                     expiryDate:
-                        form.insuranceExpiryDate,
+                        formatDateForStorage(
+                            form.insuranceExpiryDate
+                        ),
                 },
+
+                // -------------------------------------------------------------
+                // PASSWORD
+                // -------------------------------------------------------------
 
                 password:
                     form.password,
             };
 
-            // ==============================================================
+            // =================================================================
             // CREATE EMPLOYEE
-            // ==============================================================
+            // =================================================================
 
             const data = await apiFetch<{
                 message: string;
@@ -694,10 +1067,6 @@ export default function CreateUser() {
                 method: "POST",
                 body: JSON.stringify(payload),
             });
-
-            // ==============================================================
-            // GET CREATED USER ID
-            // ==============================================================
 
             const userId =
                 data?.user?._id ||
@@ -709,9 +1078,9 @@ export default function CreateUser() {
                 );
             }
 
-            // ==============================================================
+            // =================================================================
             // UPLOAD AVATAR
-            // ==============================================================
+            // =================================================================
 
             if (avatarFile) {
                 await uploadImage(
@@ -721,9 +1090,9 @@ export default function CreateUser() {
                 );
             }
 
-            // ==============================================================
+            // =================================================================
             // UPLOAD IQAMA
-            // ==============================================================
+            // =================================================================
 
             if (iqamaFile) {
                 await uploadImage(
@@ -733,9 +1102,9 @@ export default function CreateUser() {
                 );
             }
 
-            // ==============================================================
+            // =================================================================
             // SUCCESS
-            // ==============================================================
+            // =================================================================
 
             setCreatedUserId(userId);
 
@@ -744,7 +1113,6 @@ export default function CreateUser() {
             );
 
             setShowSuccessModal(true);
-
         } catch (err) {
             console.error(
                 "Create employee error:",
@@ -758,21 +1126,20 @@ export default function CreateUser() {
 
             setError(message);
             setShowErrorModal(true);
-
         } finally {
             setSubmitting(false);
         }
     };
 
-    // ========================================================================
+    // =========================================================================
     // UI
-    // ========================================================================
+    // =========================================================================
 
     return (
-        <div className="min-h-screen w-full bg-[#f5f7f6]">
-            {/* ============================================================
+        <AdminPageLayout>
+            {/* =================================================================
                 HEADER
-            ============================================================ */}
+            ================================================================= */}
 
             <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
                 <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -781,11 +1148,15 @@ export default function CreateUser() {
                             <button
                                 type="button"
                                 onClick={() =>
-                                    navigate("/admin/users")
+                                    navigate(
+                                        "/admin/users"
+                                    )
                                 }
                                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
                             >
-                                <ArrowLeft size={19} />
+                                <ArrowLeft
+                                    size={19}
+                                />
                             </button>
 
                             <div>
@@ -800,8 +1171,9 @@ export default function CreateUser() {
                                 </div>
 
                                 <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-                                    Add complete employee information
-                                    and documents
+                                    Add complete employee
+                                    information and
+                                    documents
                                 </p>
                             </div>
                         </div>
@@ -811,78 +1183,105 @@ export default function CreateUser() {
                             onClick={resetForm}
                             className="hidden h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
                         >
-                            <RotateCcw size={15} />
+                            <RotateCcw
+                                size={15}
+                            />
                             Reset
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* ============================================================
+            {/* =================================================================
                 MAIN
-            ============================================================ */}
+            ================================================================= */}
 
             <main className="w-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                 <form
                     onSubmit={handleSubmit}
                     className="mx-auto w-full max-w-[1800px]"
                 >
-                    {/* ========================================================
-                        EMPLOYEE IMAGES — TOP
-                    ======================================================== */}
+                    {/* =========================================================
+                        IMAGES
+                    ========================================================= */}
 
                     <div className="mb-6">
                         <Section
-                            icon={<Camera size={20} />}
+                            icon={
+                                <Camera size={20} />
+                            }
                             title="Employee Images"
                             description="Upload the employee profile photo and Iqama / Resident ID"
                         >
                             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.72fr_1.28fr]">
-                                {/* AVATAR — SMALLER */}
-
                                 <ImageUpload
                                     title="Employee Image"
                                     description="Profile / employee image"
-                                    icon={<Camera size={19} />}
-                                    file={avatarFile}
-                                    preview={avatarPreview}
-                                    onChange={handleAvatarChange}
-                                    onRemove={removeAvatar}
+                                    icon={
+                                        <Camera
+                                            size={19}
+                                        />
+                                    }
+                                    file={
+                                        avatarFile
+                                    }
+                                    preview={
+                                        avatarPreview
+                                    }
+                                    onChange={
+                                        handleAvatarChange
+                                    }
+                                    onRemove={
+                                        removeAvatar
+                                    }
                                     compact
                                 />
-
-                                {/* IQAMA — LARGER */}
 
                                 <ImageUpload
                                     title="Iqama / Resident ID"
                                     description="Employee Iqama document"
-                                    icon={<IdCard size={19} />}
-                                    file={iqamaFile}
-                                    preview={iqamaPreview}
-                                    onChange={handleIqamaChange}
-                                    onRemove={removeIqama}
+                                    icon={
+                                        <IdCard
+                                            size={19}
+                                        />
+                                    }
+                                    file={
+                                        iqamaFile
+                                    }
+                                    preview={
+                                        iqamaPreview
+                                    }
+                                    onChange={
+                                        handleIqamaChange
+                                    }
+                                    onRemove={
+                                        removeIqama
+                                    }
                                 />
                             </div>
 
                             <div className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
-                                Images will be uploaded securely to
-                                Cloudinary after the employee account is
-                                created.
+                                Images will be uploaded
+                                securely to Cloudinary
+                                after the employee
+                                account is created.
                             </div>
                         </Section>
                     </div>
 
-                    {/* ========================================================
-                        MAIN TWO COLUMN LAYOUT
-                    ======================================================== */}
+                    {/* =========================================================
+                        TWO COLUMN SECTIONS
+                    ========================================================= */}
 
                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                        {/* ======================================================
-                            PERSONAL INFORMATION
-                        ====================================================== */}
+                        {/* =====================================================
+                            PERSONAL
+                        ===================================================== */}
 
                         <Section
-                            icon={<User size={20} />}
+                            icon={
+                                <User size={20} />
+                            }
                             title="Personal Information"
                             description="Basic identity and personal details"
                         >
@@ -890,8 +1289,12 @@ export default function CreateUser() {
                                 <Field
                                     label="Full Name"
                                     name="name"
-                                    value={form.name}
-                                    onChange={handleChange}
+                                    value={
+                                        form.name
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter employee name"
                                     required
                                 />
@@ -899,8 +1302,12 @@ export default function CreateUser() {
                                 <Field
                                     label="Resident ID / Iqama"
                                     name="residentIdNumber"
-                                    value={form.residentIdNumber}
-                                    onChange={handleChange}
+                                    value={
+                                        form.residentIdNumber
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter iqama number"
                                     required
                                 />
@@ -908,48 +1315,72 @@ export default function CreateUser() {
                                 <Field
                                     label="ID Version"
                                     name="idVersion"
-                                    value={form.idVersion}
-                                    onChange={handleChange}
+                                    value={
+                                        form.idVersion
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="N/A"
                                 />
 
                                 <Field
                                     label="Nationality"
                                     name="nationality"
-                                    value={form.nationality}
-                                    onChange={handleChange}
+                                    value={
+                                        form.nationality
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Bangladeshi"
                                 />
 
                                 <Field
                                     label="Birth City"
                                     name="birthCity"
-                                    value={form.birthCity}
-                                    onChange={handleChange}
+                                    value={
+                                        form.birthCity
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Chittagong"
                                 />
 
                                 <Field
                                     label="Birth Country"
                                     name="birthCountry"
-                                    value={form.birthCountry}
-                                    onChange={handleChange}
+                                    value={
+                                        form.birthCountry
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Bangladesh"
                                 />
 
                                 <Field
                                     label="Date of Birth"
                                     name="dateOfBirth"
-                                    value={form.dateOfBirth}
-                                    onChange={handleChange}
+                                    value={
+                                        form.dateOfBirth
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
 
                                 <SelectField
                                     label="Marital Status"
                                     name="maritalStatus"
-                                    value={form.maritalStatus}
-                                    onChange={handleChange}
+                                    value={
+                                        form.maritalStatus
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                 >
                                     <option value="">
                                         Select status
@@ -975,8 +1406,12 @@ export default function CreateUser() {
                                 <Field
                                     label="Sponsorship Transfers"
                                     name="sponsorshipTransfers"
-                                    value={form.sponsorshipTransfers}
-                                    onChange={handleChange}
+                                    value={
+                                        form.sponsorshipTransfers
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="number"
                                     placeholder="0"
                                 />
@@ -984,20 +1419,26 @@ export default function CreateUser() {
                                 <Field
                                     label="Religion"
                                     name="religion"
-                                    value={form.religion}
-                                    onChange={handleChange}
+                                    value={
+                                        form.religion
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Islam"
                                 />
                             </div>
                         </Section>
 
-                        {/* ======================================================
+                        {/* =====================================================
                             EMPLOYMENT
-                        ====================================================== */}
+                        ===================================================== */}
 
                         <Section
                             icon={
-                                <BriefcaseBusiness size={20} />
+                                <BriefcaseBusiness
+                                    size={20}
+                                />
                             }
                             title="Employment Information"
                             description="Work permit, employer and sponsorship details"
@@ -1006,84 +1447,124 @@ export default function CreateUser() {
                                 <Field
                                     label="Occupation"
                                     name="occupation"
-                                    value={form.occupation}
-                                    onChange={handleChange}
+                                    value={
+                                        form.occupation
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter occupation"
                                 />
 
                                 <Field
                                     label="Employer"
                                     name="employer"
-                                    value={form.employer}
-                                    onChange={handleChange}
+                                    value={
+                                        form.employer
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter employer name"
                                 />
 
                                 <Field
                                     label="Employer ID Number"
                                     name="employerIdNumber"
-                                    value={form.employerIdNumber}
-                                    onChange={handleChange}
+                                    value={
+                                        form.employerIdNumber
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter employer ID"
                                 />
 
                                 <Field
                                     label="Work Permit"
                                     name="workPermit"
-                                    value={form.workPermit}
-                                    onChange={handleChange}
+                                    value={
+                                        form.workPermit
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Work permit"
                                 />
 
                                 <Field
                                     label="Issue Place"
                                     name="issuePlace"
-                                    value={form.issuePlace}
-                                    onChange={handleChange}
+                                    value={
+                                        form.issuePlace
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Issue place"
                                 />
 
                                 <Field
                                     label="Resident ID Issue Date"
                                     name="residentIdIssueDate"
-                                    value={form.residentIdIssueDate}
-                                    onChange={handleChange}
+                                    value={
+                                        form.residentIdIssueDate
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
 
                                 <Field
                                     label="Resident ID Expiry"
                                     name="residentIdExpiry"
-                                    value={form.residentIdExpiry}
-                                    onChange={handleChange}
+                                    value={
+                                        form.residentIdExpiry
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
 
                                 <Field
                                     label="Sponsor ID Number"
                                     name="sponsorIdNumber"
-                                    value={form.sponsorIdNumber}
-                                    onChange={handleChange}
+                                    value={
+                                        form.sponsorIdNumber
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter resident ID / Iqama number"
                                 />
 
                                 <Field
                                     label="Sponsor Name"
                                     name="sponsorName"
-                                    value={form.sponsorName}
-                                    onChange={handleChange}
+                                    value={
+                                        form.sponsorName
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Enter sponsor name"
                                     className="md:col-span-2"
                                 />
                             </div>
                         </Section>
 
-                        {/* ======================================================
+                        {/* =====================================================
                             PASSPORT
-                        ====================================================== */}
+                        ===================================================== */}
 
                         <Section
-                            icon={<CreditCard size={20} />}
+                            icon={
+                                <CreditCard
+                                    size={20}
+                                />
+                            }
                             title="Passport Information"
                             description="Passport and travel document details"
                         >
@@ -1091,16 +1572,24 @@ export default function CreateUser() {
                                 <Field
                                     label="Passport Number"
                                     name="passportNumber"
-                                    value={form.passportNumber}
-                                    onChange={handleChange}
+                                    value={
+                                        form.passportNumber
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="A03870440"
                                 />
 
                                 <SelectField
                                     label="Type"
                                     name="passportType"
-                                    value={form.passportType}
-                                    onChange={handleChange}
+                                    value={
+                                        form.passportType
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                 >
                                     <option value="Normal">
                                         Normal
@@ -1118,52 +1607,76 @@ export default function CreateUser() {
                                 <Field
                                     label="Issuing Date"
                                     name="passportIssuingDate"
-                                    value={form.passportIssuingDate}
-                                    onChange={handleChange}
+                                    value={
+                                        form.passportIssuingDate
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
 
                                 <Field
                                     label="Expiry Date"
                                     name="passportExpiryDate"
-                                    value={form.passportExpiryDate}
-                                    onChange={handleChange}
+                                    value={
+                                        form.passportExpiryDate
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
 
                                 <Field
                                     label="Issuing City"
                                     name="passportIssuingCity"
-                                    value={form.passportIssuingCity}
-                                    onChange={handleChange}
+                                    value={
+                                        form.passportIssuingCity
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Bangladesh"
                                 />
 
                                 <Field
                                     label="Status"
                                     name="passportStatus"
-                                    value="Active"
-                                    onChange={handleChange}
+                                    value={
+                                        form.passportStatus
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="Active"
                                 />
 
                                 <Field
                                     label="Amount Deposit"
                                     name="amountDeposit"
-                                    value={form.amountDeposit}
-                                    onChange={handleChange}
+                                    value={
+                                        form.amountDeposit
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="SAR 0.00"
                                     className="md:col-span-2"
                                 />
                             </div>
                         </Section>
 
-                        {/* ======================================================
+                        {/* =====================================================
                             HAJJ
-                        ====================================================== */}
+                        ===================================================== */}
 
                         <Section
-                            icon={<ShieldCheck size={20} />}
+                            icon={
+                                <ShieldCheck
+                                    size={20}
+                                />
+                            }
                             title="Hajj Information"
                             description="Hajj eligibility and history"
                         >
@@ -1171,8 +1684,12 @@ export default function CreateUser() {
                                 <SelectField
                                     label="Hajj Status"
                                     name="hajjStatus"
-                                    value={form.hajjStatus}
-                                    onChange={handleChange}
+                                    value={
+                                        form.hajjStatus
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                 >
                                     <option value="eligible">
                                         Eligible
@@ -1190,19 +1707,27 @@ export default function CreateUser() {
                                 <Field
                                     label="Last Hajj Year"
                                     name="lastHajjYear"
-                                    value={form.lastHajjYear}
-                                    onChange={handleChange}
+                                    value={
+                                        form.lastHajjYear
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     placeholder="2024"
                                 />
                             </div>
                         </Section>
 
-                        {/* ======================================================
-                            INSURANCE
-                        ====================================================== */}
+                        {/* =====================================================
+                            HEALTH INSURANCE
+                        ===================================================== */}
 
                         <Section
-                            icon={<HeartPulse size={20} />}
+                            icon={
+                                <HeartPulse
+                                    size={20}
+                                />
+                            }
                             title="Health Insurance"
                             description="Employee medical insurance information"
                         >
@@ -1210,107 +1735,257 @@ export default function CreateUser() {
                                 <Field
                                     label="Insurance Issuing Date"
                                     name="insuranceIssuingDate"
-                                    value={form.insuranceIssuingDate}
-                                    onChange={handleChange}
+                                    value={
+                                        form.insuranceIssuingDate
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
 
                                 <Field
                                     label="Insurance Expiry Date"
                                     name="insuranceExpiryDate"
-                                    value={form.insuranceExpiryDate}
-                                    onChange={handleChange}
+                                    value={
+                                        form.insuranceExpiryDate
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                     type="date"
                                 />
                             </div>
                         </Section>
 
-                        {/* ======================================================
-                            ACCOUNT
-                        ====================================================== */}
+                        {/* =====================================================
+                            SECURITY
+                        ===================================================== */}
 
                         <Section
-                            icon={<LockKeyhole size={20} />}
+                            icon={
+                                <LockKeyhole
+                                    size={20}
+                                />
+                            }
                             title="Account Security"
                             description="Login credentials for the employee"
                         >
-                            <div>
-                                <label
-                                    htmlFor="password"
-                                    className="mb-2 block text-sm font-medium text-slate-700"
-                                >
-                                    Employee Password
-
-                                    <span className="ml-1 text-red-500">
-                                        *
-                                    </span>
-                                </label>
-
-                                <div className="relative">
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type={
-                                            showPassword
-                                                ? "text"
-                                                : "password"
-                                        }
-                                        value={form.password}
-                                        onChange={handleChange}
-                                        placeholder="Create login password"
-                                        required
-                                        minLength={6}
-                                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
-                                    />
-
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowPassword(
-                                                (prev) => !prev
-                                            )
-                                        }
-                                        className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                <div>
+                                    <label
+                                        htmlFor="password"
+                                        className="mb-2 block text-sm font-medium text-slate-700"
                                     >
-                                        {showPassword ? (
-                                            <EyeOff size={17} />
-                                        ) : (
-                                            <Eye size={17} />
-                                        )}
-                                    </button>
+                                        Employee Password
+
+                                        <span className="ml-1 text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <div className="relative">
+                                        <input
+                                            id="password"
+                                            name="password"
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            value={
+                                                form.password
+                                            }
+                                            onChange={
+                                                handleChange
+                                            }
+                                            placeholder="Create login password"
+                                            required
+                                            minLength={
+                                                6
+                                            }
+                                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(
+                                                    (
+                                                        prev
+                                                    ) =>
+                                                        !prev
+                                                )
+                                            }
+                                            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff
+                                                    size={
+                                                        17
+                                                    }
+                                                />
+                                            ) : (
+                                                <Eye
+                                                    size={
+                                                        17
+                                                    }
+                                                />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    <p className="mt-2 text-xs text-slate-400">
+                                        Minimum 6
+                                        characters.
+                                        The password
+                                        will be
+                                        securely
+                                        hashed before
+                                        storage.
+                                    </p>
                                 </div>
 
-                                <p className="mt-2 text-xs text-slate-400">
-                                    Minimum 6 characters. The password
-                                    will be securely hashed before storage.
-                                </p>
+                                <div>
+                                    <label
+                                        htmlFor="confirmPassword"
+                                        className="mb-2 block text-sm font-medium text-slate-700"
+                                    >
+                                        Confirm Password
+
+                                        <span className="ml-1 text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+
+                                    <div className="relative">
+                                        <input
+                                            id="confirmPassword"
+                                            name="confirmPassword"
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            value={
+                                                confirmPassword
+                                            }
+                                            onChange={(
+                                                e
+                                            ) => {
+                                                setConfirmPassword(
+                                                    e
+                                                        .target
+                                                        .value
+                                                );
+
+                                                setError(
+                                                    ""
+                                                );
+
+                                                setSuccess(
+                                                    ""
+                                                );
+                                            }}
+                                            placeholder="Re-enter password"
+                                            required
+                                            minLength={
+                                                6
+                                            }
+                                            className={`h-11 w-full rounded-xl border bg-slate-50/50 px-3.5 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-4 ${
+                                                confirmPassword &&
+                                                confirmPassword !==
+                                                    form.password
+                                                    ? "border-red-300 focus:border-red-500 focus:ring-red-500/10"
+                                                    : confirmPassword &&
+                                                      confirmPassword ===
+                                                          form.password
+                                                    ? "border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/10"
+                                                    : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/10"
+                                            }`}
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(
+                                                    (
+                                                        prev
+                                                    ) =>
+                                                        !prev
+                                                )
+                                            }
+                                            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff
+                                                    size={
+                                                        17
+                                                    }
+                                                />
+                                            ) : (
+                                                <Eye
+                                                    size={
+                                                        17
+                                                    }
+                                                />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {confirmPassword &&
+                                        confirmPassword !==
+                                            form.password && (
+                                            <p className="mt-2 text-xs font-medium text-red-500">
+                                                Passwords
+                                                do not
+                                                match.
+                                            </p>
+                                        )}
+
+                                    {confirmPassword &&
+                                        confirmPassword ===
+                                            form.password && (
+                                            <p className="mt-2 text-xs font-medium text-emerald-600">
+                                                Passwords
+                                                match.
+                                            </p>
+                                        )}
+                                </div>
                             </div>
                         </Section>
                     </div>
 
-                    {/* ========================================================
-                        SUBMIT BAR
-                    ======================================================== */}
+                    {/* =========================================================
+                        SAVE BAR
+                    ========================================================= */}
 
                     <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-sm font-medium text-slate-800">
-                                    Ready to create this employee?
+                                    Ready to create this
+                                    employee?
                                 </p>
 
                                 <p className="mt-0.5 text-xs text-slate-500">
-                                    QR information is generated
-                                    automatically from the employee's
-                                    main profile data.
+                                    QR information is
+                                    generated
+                                    automatically from
+                                    the employee's main
+                                    profile data.
                                 </p>
                             </div>
 
                             <div className="flex w-full gap-3 sm:w-auto">
                                 <button
                                     type="button"
-                                    onClick={resetForm}
-                                    disabled={submitting}
+                                    onClick={
+                                        resetForm
+                                    }
+                                    disabled={
+                                        submitting
+                                    }
                                     className="flex-1 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 sm:flex-none"
                                 >
                                     Reset
@@ -1318,17 +1993,29 @@ export default function CreateUser() {
 
                                 <button
                                     type="submit"
-                                    disabled={submitting}
+                                    disabled={
+                                        submitting ||
+                                        (confirmPassword.length >
+                                            0 &&
+                                            confirmPassword !==
+                                                form.password)
+                                    }
                                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                                 >
                                     {submitting ? (
                                         <>
                                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+
                                             Creating...
                                         </>
                                     ) : (
                                         <>
-                                            <UserPlus size={17} />
+                                            <UserPlus
+                                                size={
+                                                    17
+                                                }
+                                            />
+
                                             Create Employee
                                         </>
                                     )}
@@ -1339,9 +2026,9 @@ export default function CreateUser() {
                 </form>
             </main>
 
-            {/* ============================================================
+            {/* =================================================================
                 SUCCESS MODAL
-            ============================================================ */}
+            ================================================================= */}
 
             {showSuccessModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-5 backdrop-blur-sm">
@@ -1356,7 +2043,8 @@ export default function CreateUser() {
                         </div>
 
                         <h2 className="mt-6 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-                            Employee Created Successfully
+                            Employee Created
+                            Successfully
                         </h2>
 
                         <p className="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-slate-500">
@@ -1369,15 +2057,16 @@ export default function CreateUser() {
                         </div>
 
                         <p className="mt-3 text-[11px] font-bold text-slate-400">
-                            Opening employee profile...
+                            Opening employee
+                            profile...
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* ============================================================
+            {/* =================================================================
                 ERROR MODAL
-            ============================================================ */}
+            ================================================================= */}
 
             {showErrorModal && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 px-5 backdrop-blur-sm">
@@ -1403,7 +2092,10 @@ export default function CreateUser() {
                         <button
                             type="button"
                             onClick={() => {
-                                setShowErrorModal(false);
+                                setShowErrorModal(
+                                    false
+                                );
+
                                 setError("");
                             }}
                             className="mt-7 w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -1414,9 +2106,9 @@ export default function CreateUser() {
                 </div>
             )}
 
-            {/* ============================================================
-                MODAL ANIMATIONS
-            ============================================================ */}
+            {/* =================================================================
+                ANIMATIONS
+            ================================================================= */}
 
             <style>
                 {`
@@ -1443,6 +2135,6 @@ export default function CreateUser() {
                     }
                 `}
             </style>
-        </div>
+        </AdminPageLayout>
     );
 }

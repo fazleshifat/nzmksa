@@ -6,7 +6,18 @@ import type {
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { apiFetch, apiUpload, type Employee } from "../../../../api/api";
+import {
+    Eye,
+    EyeOff,
+} from 'lucide-react';
+
+import {
+    apiFetch,
+    apiUpload,
+    type Employee,
+} from "../../../../api/api";
+
+import AdminPageLayout from '../../AdminPageLayout';
 
 interface UserResponse {
     user: Employee;
@@ -24,14 +35,23 @@ export default function EditUser() {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const [user, setUser] = useState<Employee | null>(null);
+    const [user, setUser] =
+        useState<Employee | null>(null);
 
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
+    const [loading, setLoading] =
+        useState(true);
 
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [saving, setSaving] =
+        useState(false);
+
+    const [uploadingImage, setUploadingImage] =
+        useState(false);
+
+    const [error, setError] =
+        useState('');
+
+    const [success, setSuccess] =
+        useState('');
 
     const [showSuccessModal, setShowSuccessModal] =
         useState(false);
@@ -47,6 +67,203 @@ export default function EditUser() {
 
     const [iqamaPreview, setIqamaPreview] =
         useState('');
+
+    // =========================================================================
+    // PASSWORD VISIBILITY
+    // =========================================================================
+
+    const [showCurrentPassword, setShowCurrentPassword] =
+        useState(false);
+
+    const [showNewPassword, setShowNewPassword] =
+        useState(false);
+
+    const [showConfirmPassword, setShowConfirmPassword] =
+        useState(false);
+
+    // =========================================================================
+    // DATE HELPERS
+    // =========================================================================
+    //
+    // DATABASE STANDARD:
+    //
+    // YYYY-MM-DD
+    //
+    // Example:
+    // 2026-10-10
+    //
+    // HTML input[type="date"] also requires:
+    // YYYY-MM-DD
+    //
+    // Existing database values may still contain:
+    // DD-MM-YYYY
+    // DD/MM/YYYY
+    // YYYY/MM/DD
+    // ISO timestamps
+    //
+    // This function converts all supported formats to:
+    // YYYY-MM-DD
+    // =========================================================================
+
+    function formatDateForInput(
+        value: unknown
+    ): string {
+        if (!value) {
+            return '';
+        }
+
+        const stringValue =
+            String(value).trim();
+
+        if (!stringValue) {
+            return '';
+        }
+
+        // ---------------------------------------------------------------------
+        // Already correct:
+        // YYYY-MM-DD
+        // ---------------------------------------------------------------------
+
+        if (
+            /^\d{4}-\d{2}-\d{2}$/.test(
+                stringValue
+            )
+        ) {
+            return stringValue;
+        }
+
+        // ---------------------------------------------------------------------
+        // ISO date/time:
+        // 2026-10-10T00:00:00.000Z
+        // ---------------------------------------------------------------------
+
+        const isoMatch =
+            stringValue.match(
+                /^(\d{4}-\d{2}-\d{2})T/
+            );
+
+        if (isoMatch) {
+            return isoMatch[1];
+        }
+
+        // ---------------------------------------------------------------------
+        // DD-MM-YYYY
+        // Example:
+        // 10-10-2026
+        //
+        // Converts to:
+        // 2026-10-10
+        // ---------------------------------------------------------------------
+
+        const dashMatch =
+            stringValue.match(
+                /^(\d{2})-(\d{2})-(\d{4})$/
+            );
+
+        if (dashMatch) {
+            const [, day, month, year] =
+                dashMatch;
+
+            return `${year}-${month}-${day}`;
+        }
+
+        // ---------------------------------------------------------------------
+        // DD/MM/YYYY
+        // Example:
+        // 10/10/2026
+        //
+        // Converts to:
+        // 2026-10-10
+        // ---------------------------------------------------------------------
+
+        const slashMatch =
+            stringValue.match(
+                /^(\d{2})\/(\d{2})\/(\d{4})$/
+            );
+
+        if (slashMatch) {
+            const [, day, month, year] =
+                slashMatch;
+
+            return `${year}-${month}-${day}`;
+        }
+
+        // ---------------------------------------------------------------------
+        // YYYY/MM/DD
+        // Example:
+        // 2026/10/10
+        //
+        // Converts to:
+        // 2026-10-10
+        // ---------------------------------------------------------------------
+
+        const yearSlashMatch =
+            stringValue.match(
+                /^(\d{4})\/(\d{2})\/(\d{2})$/
+            );
+
+        if (yearSlashMatch) {
+            const [, year, month, day] =
+                yearSlashMatch;
+
+            return `${year}-${month}-${day}`;
+        }
+
+        // ---------------------------------------------------------------------
+        // FALLBACK
+        // ---------------------------------------------------------------------
+
+        const date =
+            new Date(stringValue);
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return '';
+        }
+
+        const year =
+            date.getFullYear();
+
+        const month =
+            String(
+                date.getMonth() + 1
+            ).padStart(2, '0');
+
+        const day =
+            String(
+                date.getDate()
+            ).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }
+
+    // =========================================================================
+    // NORMALIZE DATE FOR DATABASE
+    // =========================================================================
+    //
+    // Every date sent by this component will use:
+    //
+    // YYYY-MM-DD
+    //
+    // Example:
+    // 2026-10-10
+    // =========================================================================
+
+    function normalizeDateForDatabase(
+        value: string
+    ): string | undefined {
+        const normalized =
+            formatDateForInput(value);
+
+        return normalized || undefined;
+    }
+
+    // =========================================================================
+    // FORM
+    // =========================================================================
 
     const [form, setForm] = useState({
         name: '',
@@ -82,6 +299,13 @@ export default function EditUser() {
 
         hajjStatus: '',
         lastHajjYear: '',
+
+        insuranceIssuingDate: '',
+        insuranceExpiryDate: '',
+
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: '',
     });
 
     // =========================================================================
@@ -105,7 +329,8 @@ export default function EditUser() {
                         `/api/admin/users/${id}`
                     );
 
-                const loadedUser = response.user;
+                const loadedUser =
+                    response.user;
 
                 setUser(loadedUser);
 
@@ -142,9 +367,11 @@ export default function EditUser() {
                         loadedUser.birthCountry || ''
                     ),
 
-                    dateOfBirth: String(
-                        loadedUser.dateOfBirth || ''
-                    ),
+                    // DATE → YYYY-MM-DD
+                    dateOfBirth:
+                        formatDateForInput(
+                            loadedUser.dateOfBirth
+                        ),
 
                     maritalStatus: String(
                         loadedUser.maritalStatus || ''
@@ -181,13 +408,17 @@ export default function EditUser() {
                         loadedUser.workPermit || ''
                     ),
 
-                    residentIdIssueDate: String(
-                        loadedUser.residentIdIssueDate || ''
-                    ),
+                    // DATE → YYYY-MM-DD
+                    residentIdIssueDate:
+                        formatDateForInput(
+                            loadedUser.residentIdIssueDate
+                        ),
 
-                    residentIdExpiry: String(
-                        loadedUser.residentIdExpiry || ''
-                    ),
+                    // DATE → YYYY-MM-DD
+                    residentIdExpiry:
+                        formatDateForInput(
+                            loadedUser.residentIdExpiry
+                        ),
 
                     sponsorName: String(
                         loadedUser.sponsorName || ''
@@ -200,6 +431,10 @@ export default function EditUser() {
                     active:
                         loadedUser.active !== false,
 
+                    // ---------------------------------------------------------
+                    // PASSPORT
+                    // ---------------------------------------------------------
+
                     passportNumber: String(
                         loadedUser.passport
                             ?.passportNumber || ''
@@ -209,15 +444,19 @@ export default function EditUser() {
                         loadedUser.passport?.type || ''
                     ),
 
-                    passportIssuingDate: String(
-                        loadedUser.passport
-                            ?.issuingDate || ''
-                    ),
+                    // DATE → YYYY-MM-DD
+                    passportIssuingDate:
+                        formatDateForInput(
+                            loadedUser.passport
+                                ?.issuingDate
+                        ),
 
-                    passportExpiryDate: String(
-                        loadedUser.passport
-                            ?.expiryDate || ''
-                    ),
+                    // DATE → YYYY-MM-DD
+                    passportExpiryDate:
+                        formatDateForInput(
+                            loadedUser.passport
+                                ?.expiryDate
+                        ),
 
                     passportIssuingCity: String(
                         loadedUser.passport
@@ -233,6 +472,10 @@ export default function EditUser() {
                             ?.amountDeposit || ''
                     ),
 
+                    // ---------------------------------------------------------
+                    // HAJJ
+                    // ---------------------------------------------------------
+
                     hajjStatus: String(
                         loadedUser.hajjDetails
                             ?.status || ''
@@ -242,6 +485,32 @@ export default function EditUser() {
                         loadedUser.hajjDetails
                             ?.lastHajjYear || ''
                     ),
+
+                    // ---------------------------------------------------------
+                    // HEALTH INSURANCE
+                    // ---------------------------------------------------------
+
+                    // DATE → YYYY-MM-DD
+                    insuranceIssuingDate:
+                        formatDateForInput(
+                            loadedUser.healthInsurance
+                                ?.issuingDate
+                        ),
+
+                    // DATE → YYYY-MM-DD
+                    insuranceExpiryDate:
+                        formatDateForInput(
+                            loadedUser.healthInsurance
+                                ?.expiryDate
+                        ),
+
+                    // ---------------------------------------------------------
+                    // PASSWORD FIELDS ALWAYS EMPTY
+                    // ---------------------------------------------------------
+
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmNewPassword: '',
                 });
             } catch (error) {
                 console.error(
@@ -274,6 +543,9 @@ export default function EditUser() {
             ...current,
             [field]: value,
         }));
+
+        setError('');
+        setSuccess('');
     };
 
     // =========================================================================
@@ -285,98 +557,168 @@ export default function EditUser() {
             return false;
         }
 
+        const passwordChanged =
+            form.currentPassword.trim() !== '' ||
+            form.newPassword.trim() !== '' ||
+            form.confirmNewPassword.trim() !== '';
+
         return (
             form.name.trim() !==
             String(user.name || '') ||
+
             form.residentIdNumber.trim() !==
             String(user.residentIdNumber || '') ||
+
             form.idVersion.trim() !==
             String(user.idVersion || '') ||
+
             form.nationality.trim() !==
             String(user.nationality || '') ||
+
             form.birthCity.trim() !==
             String(user.birthCity || '') ||
+
             form.birthCountry.trim() !==
             String(user.birthCountry || '') ||
+
+            // DATE
             form.dateOfBirth.trim() !==
-            String(user.dateOfBirth || '') ||
+            formatDateForInput(
+                user.dateOfBirth
+            ) ||
+
             form.maritalStatus.trim() !==
             String(user.maritalStatus || '') ||
+
             form.religion.trim() !==
             String(user.religion || '') ||
+
             form.sponsorshipTransfers !==
-            (user.sponsorshipTransfers != null
-                ? String(
-                    user.sponsorshipTransfers
-                )
-                : '') ||
+            (
+                user.sponsorshipTransfers != null
+                    ? String(
+                        user.sponsorshipTransfers
+                    )
+                    : ''
+            ) ||
+
             form.occupation.trim() !==
             String(user.occupation || '') ||
+
             form.employer.trim() !==
             String(user.employer || '') ||
+
             form.employerIdNumber.trim() !==
             String(user.employerIdNumber || '') ||
+
             form.issuePlace.trim() !==
             String(user.issuePlace || '') ||
+
             form.workPermit.trim() !==
             String(user.workPermit || '') ||
+
+            // DATE
             form.residentIdIssueDate.trim() !==
-            String(
-                user.residentIdIssueDate || ''
+            formatDateForInput(
+                user.residentIdIssueDate
             ) ||
+
+            // DATE
             form.residentIdExpiry.trim() !==
-            String(
-                user.residentIdExpiry || ''
+            formatDateForInput(
+                user.residentIdExpiry
             ) ||
+
             form.sponsorName.trim() !==
             String(user.sponsorName || '') ||
+
             form.sponsorIdNumber.trim() !==
             String(user.sponsorIdNumber || '') ||
+
             form.active !==
             (user.active !== false) ||
+
+            // ---------------------------------------------------------------
+            // PASSPORT
+            // ---------------------------------------------------------------
+
             form.passportNumber.trim() !==
             String(
-                user.passport?.passportNumber ||
-                ''
+                user.passport?.passportNumber || ''
             ) ||
+
             form.passportType.trim() !==
             String(
                 user.passport?.type || ''
             ) ||
+
+            // DATE
             form.passportIssuingDate.trim() !==
-            String(
-                user.passport?.issuingDate ||
-                ''
+            formatDateForInput(
+                user.passport?.issuingDate
             ) ||
+
+            // DATE
             form.passportExpiryDate.trim() !==
-            String(
-                user.passport?.expiryDate ||
-                ''
+            formatDateForInput(
+                user.passport?.expiryDate
             ) ||
+
             form.passportIssuingCity.trim() !==
             String(
-                user.passport?.issuingCity ||
-                ''
+                user.passport?.issuingCity || ''
             ) ||
+
             form.passportStatus.trim() !==
             String(
                 user.passport?.status || ''
             ) ||
+
             form.passportAmountDeposit.trim() !==
             String(
-                user.passport
-                    ?.amountDeposit || ''
+                user.passport?.amountDeposit || ''
             ) ||
+
+            // ---------------------------------------------------------------
+            // HAJJ
+            // ---------------------------------------------------------------
+
             form.hajjStatus.trim() !==
             String(
-                user.hajjDetails?.status ||
-                ''
+                user.hajjDetails?.status || ''
             ) ||
+
             form.lastHajjYear.trim() !==
             String(
-                user.hajjDetails?.lastHajjYear ||
-                ''
+                user.hajjDetails?.lastHajjYear || ''
             ) ||
+
+            // ---------------------------------------------------------------
+            // HEALTH INSURANCE
+            // ---------------------------------------------------------------
+
+            // DATE
+            form.insuranceIssuingDate.trim() !==
+            formatDateForInput(
+                user.healthInsurance?.issuingDate
+            ) ||
+
+            // DATE
+            form.insuranceExpiryDate.trim() !==
+            formatDateForInput(
+                user.healthInsurance?.expiryDate
+            ) ||
+
+            // ---------------------------------------------------------------
+            // PASSWORD
+            // ---------------------------------------------------------------
+
+            passwordChanged ||
+
+            // ---------------------------------------------------------------
+            // IMAGES
+            // ---------------------------------------------------------------
+
             avatarFile !== null ||
             iqamaFile !== null
         );
@@ -389,7 +731,8 @@ export default function EditUser() {
     const handleAvatarChange = (
         event: ChangeEvent<HTMLInputElement>
     ) => {
-        const file = event.target.files?.[0];
+        const file =
+            event.target.files?.[0];
 
         if (!file) {
             return;
@@ -422,7 +765,8 @@ export default function EditUser() {
     const handleIqamaChange = (
         event: ChangeEvent<HTMLInputElement>
     ) => {
-        const file = event.target.files?.[0];
+        const file =
+            event.target.files?.[0];
 
         if (!file) {
             return;
@@ -461,13 +805,23 @@ export default function EditUser() {
         type: 'avatar' | 'iqama'
     ): Promise<UploadResponse> => {
         if (!id) {
-            throw new Error('User ID is missing');
+            throw new Error(
+                'User ID is missing'
+            );
         }
 
-        const formData = new FormData();
+        const formData =
+            new FormData();
 
-        formData.append('image', file);
-        formData.append('type', type);
+        formData.append(
+            'image',
+            file
+        );
+
+        formData.append(
+            'type',
+            type
+        );
 
         return await apiUpload<UploadResponse>(
             `/api/uploads/admin/user/${id}/image`,
@@ -486,6 +840,78 @@ export default function EditUser() {
 
         if (!id) {
             return;
+        }
+
+        // -------------------------------------------------------------
+        // PASSWORD VALIDATION
+        // -------------------------------------------------------------
+
+        const passwordFieldsEntered =
+            form.currentPassword.trim() !== '' ||
+            form.newPassword.trim() !== '' ||
+            form.confirmNewPassword.trim() !== '';
+
+        if (passwordFieldsEntered) {
+            if (
+                !form.currentPassword.trim()
+            ) {
+                setError(
+                    'Please enter the current password.'
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth',
+                });
+
+                return;
+            }
+
+            if (
+                !form.newPassword.trim()
+            ) {
+                setError(
+                    'Please enter a new password.'
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth',
+                });
+
+                return;
+            }
+
+            if (
+                form.newPassword.length < 6
+            ) {
+                setError(
+                    'New password must be at least 6 characters.'
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth',
+                });
+
+                return;
+            }
+
+            if (
+                form.newPassword !==
+                form.confirmNewPassword
+            ) {
+                setError(
+                    'New password and confirm password do not match.'
+                );
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth',
+                });
+
+                return;
+            }
         }
 
         // -------------------------------------------------------------
@@ -510,8 +936,21 @@ export default function EditUser() {
             setError('');
             setSuccess('');
 
-            const payload = {
-                name: form.name.trim(),
+            // ---------------------------------------------------------
+            // NORMALIZE ALL DATE VALUES
+            // ---------------------------------------------------------
+            //
+            // Every date sent to backend:
+            //
+            // YYYY-MM-DD
+            //
+            // Example:
+            // 2026-10-10
+            // ---------------------------------------------------------
+
+            const payload: Record<string, unknown> = {
+                name:
+                    form.name.trim(),
 
                 residentIdNumber:
                     form.residentIdNumber.trim(),
@@ -528,8 +967,11 @@ export default function EditUser() {
                 birthCountry:
                     form.birthCountry.trim(),
 
+                // DATE → YYYY-MM-DD
                 dateOfBirth:
-                    form.dateOfBirth.trim(),
+                    normalizeDateForDatabase(
+                        form.dateOfBirth
+                    ),
 
                 maritalStatus:
                     form.maritalStatus.trim(),
@@ -559,11 +1001,17 @@ export default function EditUser() {
                 workPermit:
                     form.workPermit.trim(),
 
+                // DATE → YYYY-MM-DD
                 residentIdIssueDate:
-                    form.residentIdIssueDate.trim(),
+                    normalizeDateForDatabase(
+                        form.residentIdIssueDate
+                    ),
 
+                // DATE → YYYY-MM-DD
                 residentIdExpiry:
-                    form.residentIdExpiry.trim(),
+                    normalizeDateForDatabase(
+                        form.residentIdExpiry
+                    ),
 
                 sponsorName:
                     form.sponsorName.trim(),
@@ -571,7 +1019,12 @@ export default function EditUser() {
                 sponsorIdNumber:
                     form.sponsorIdNumber.trim(),
 
-                active: form.active,
+                active:
+                    form.active,
+
+                // -----------------------------------------------------
+                // PASSPORT
+                // -----------------------------------------------------
 
                 passport: {
                     amountDeposit:
@@ -583,11 +1036,17 @@ export default function EditUser() {
                     type:
                         form.passportType.trim(),
 
+                    // DATE → YYYY-MM-DD
                     issuingDate:
-                        form.passportIssuingDate.trim(),
+                        normalizeDateForDatabase(
+                            form.passportIssuingDate
+                        ),
 
+                    // DATE → YYYY-MM-DD
                     expiryDate:
-                        form.passportExpiryDate.trim(),
+                        normalizeDateForDatabase(
+                            form.passportExpiryDate
+                        ),
 
                     issuingCity:
                         form.passportIssuingCity.trim(),
@@ -596,14 +1055,49 @@ export default function EditUser() {
                         form.passportStatus.trim(),
                 },
 
+                // -----------------------------------------------------
+                // HAJJ
+                // -----------------------------------------------------
+
                 hajjDetails: {
                     status:
                         form.hajjStatus.trim(),
 
+                    // This is a YEAR, not a date.
                     lastHajjYear:
                         form.lastHajjYear.trim(),
                 },
+
+                // -----------------------------------------------------
+                // HEALTH INSURANCE
+                // -----------------------------------------------------
+
+                healthInsurance: {
+                    // DATE → YYYY-MM-DD
+                    issuingDate:
+                        normalizeDateForDatabase(
+                            form.insuranceIssuingDate
+                        ),
+
+                    // DATE → YYYY-MM-DD
+                    expiryDate:
+                        normalizeDateForDatabase(
+                            form.insuranceExpiryDate
+                        ),
+                },
             };
+
+            // -------------------------------------------------------------
+            // PASSWORD UPDATE
+            // -------------------------------------------------------------
+
+            if (passwordFieldsEntered) {
+                payload.currentPassword =
+                    form.currentPassword;
+
+                payload.newPassword =
+                    form.newPassword;
+            }
 
             // -------------------------------------------------------------
             // UPDATE USER INFORMATION
@@ -614,11 +1108,24 @@ export default function EditUser() {
                     `/api/admin/users/${id}`,
                     {
                         method: 'PATCH',
-                        body: JSON.stringify(payload),
+                        body: JSON.stringify(
+                            payload
+                        ),
                     }
                 );
 
             setUser(response.user);
+
+            // -------------------------------------------------------------
+            // CLEAR PASSWORD FIELDS
+            // -------------------------------------------------------------
+
+            setForm((current) => ({
+                ...current,
+                currentPassword: '',
+                newPassword: '',
+                confirmNewPassword: '',
+            }));
 
             // -------------------------------------------------------------
             // UPLOAD IMAGES
@@ -710,22 +1217,34 @@ export default function EditUser() {
     };
 
     // =========================================================================
-    // SUCCESS MODAL → PREVIOUS PAGE
+    // SUCCESS MODAL → USER VIEW PAGE
     // =========================================================================
 
     useEffect(() => {
-        if (!showSuccessModal || !id) {
+        if (
+            !showSuccessModal ||
+            !id
+        ) {
             return;
         }
 
-        const timer = window.setTimeout(() => {
-            navigate(`/admin/users/${id}`);
-        }, 1500);
+        const timer =
+            window.setTimeout(() => {
+                navigate(
+                    `/admin/users/${id}`
+                );
+            }, 1500);
 
         return () => {
-            window.clearTimeout(timer);
+            window.clearTimeout(
+                timer
+            );
         };
-    }, [showSuccessModal, navigate, id]);
+    }, [
+        showSuccessModal,
+        navigate,
+        id,
+    ]);
 
     // =========================================================================
     // LOADING
@@ -785,844 +1304,1097 @@ export default function EditUser() {
     // =========================================================================
 
     return (
-        <div className="min-h-[100dvh] bg-[#F4F8F6] text-black">
-            {/* ============================================================= */}
-            {/* SUCCESS MODAL */}
-            {/* ============================================================= */}
+        <AdminPageLayout>
+            <div className="min-h-[100dvh] bg-[#F4F8F6] text-black">
 
-            {showSuccessModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-5 backdrop-blur-sm">
-                    <div className="w-full max-w-md animate-[scaleIn_0.2s_ease-out] rounded-[2rem] bg-white p-7 text-center shadow-[0_25px_80px_rgba(0,0,0,0.20)] sm:p-9">
-                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#EAF5F0]">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-2xl font-black text-white shadow-[0_10px_25px_rgba(25,118,83,0.25)]">
-                                ✓
+                {/* ============================================================= */}
+                {/* SUCCESS MODAL */}
+                {/* ============================================================= */}
+
+                {showSuccessModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-5 backdrop-blur-sm">
+                        <div className="w-full max-w-md animate-[scaleIn_0.2s_ease-out] rounded-[2rem] bg-white p-7 text-center shadow-[0_25px_80px_rgba(0,0,0,0.20)] sm:p-9">
+
+                            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#EAF5F0]">
+                                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-2xl font-black text-white shadow-[0_10px_25px_rgba(25,118,83,0.25)]">
+                                    ✓
+                                </div>
+                            </div>
+
+                            <h2 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">
+                                User Updated Successfully
+                            </h2>
+
+                            <p className="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-black/40">
+                                Employee information has
+                                been updated successfully.
+                            </p>
+
+                            <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[#EAF5F0]">
+                                <div className="h-full w-full origin-left animate-[progress_1.5s_linear] rounded-full bg-brand-green" />
+                            </div>
+
+                            <p className="mt-3 text-[11px] font-bold text-black/30">
+                                Returning to previous page...
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* ============================================================= */}
+                {/* HEADER */}
+                {/* ============================================================= */}
+
+                <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/95 backdrop-blur-xl">
+                    <div className="flex w-full items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
+
+                        <div className="flex min-w-0 items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    navigate(-1)
+                                }
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F4F8F6] text-lg font-black transition hover:bg-[#EAF5F0] active:scale-95"
+                            >
+                                ←
+                            </button>
+
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">
+                                    Admin Panel
+                                </p>
+
+                                <h1 className="truncate text-lg font-black sm:text-xl">
+                                    Edit Employee
+                                </h1>
                             </div>
                         </div>
 
-                        <h2 className="mt-6 text-2xl font-black tracking-tight sm:text-3xl">
-                            User Updated Successfully
+                        <div className="hidden items-center gap-2 rounded-full bg-[#EAF5F0] px-4 py-2 sm:flex">
+                            <span
+                                className={`h-2 w-2 rounded-full ${
+                                    form.active
+                                        ? 'bg-brand-green'
+                                        : 'bg-black/20'
+                                }`}
+                            />
+
+                            <span className="text-xs font-bold text-black/55">
+                                {form.active
+                                    ? 'Active Account'
+                                    : 'Inactive Account'}
+                            </span>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="w-full px-4 py-5 sm:px-6 sm:py-7 lg:px-8 xl:px-10">
+
+                    {/* ========================================================= */}
+                    {/* PAGE INTRO */}
+                    {/* ========================================================= */}
+
+                    <div className="mb-6">
+                        <p className="text-xs font-bold text-black/35">
+                            Employee Management
+                        </p>
+
+                        <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
+                            Update employee profile
                         </h2>
 
-                        <p className="mx-auto mt-2 max-w-sm text-sm font-medium leading-6 text-black/40">
-                            Employee information has been
-                            updated successfully.
-                        </p>
-
-                        <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-[#EAF5F0]">
-                            <div className="h-full w-full origin-left animate-[progress_1.5s_linear] rounded-full bg-brand-green" />
-                        </div>
-
-                        <p className="mt-3 text-[11px] font-bold text-black/30">
-                            Returning to previous page...
+                        <p className="mt-1.5 max-w-2xl text-sm font-medium leading-6 text-black/40">
+                            Update identity, employment, passport,
+                            Hajj information, health insurance,
+                            password and employee documents.
                         </p>
                     </div>
-                </div>
-            )}
 
-            {/* ============================================================= */}
-            {/* HEADER */}
-            {/* ============================================================= */}
+                    {/* ========================================================= */}
+                    {/* ALERTS */}
+                    {/* ========================================================= */}
 
-            <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/95 backdrop-blur-xl">
-                <div className="flex w-full items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => navigate(-1)}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F4F8F6] text-lg font-black transition hover:bg-[#EAF5F0] active:scale-95"
-                        >
-                            ←
-                        </button>
-
-                        <div className="min-w-0">
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">
-                                Admin Panel
-                            </p>
-
-                            <h1 className="truncate text-lg font-black sm:text-xl">
-                                Edit Employee
-                            </h1>
-                        </div>
-                    </div>
-
-                    <div className="hidden items-center gap-2 rounded-full bg-[#EAF5F0] px-4 py-2 sm:flex">
-                        <span
-                            className={`h-2 w-2 rounded-full ${form.active
-                                ? 'bg-brand-green'
-                                : 'bg-black/20'
-                                }`}
-                        />
-
-                        <span className="text-xs font-bold text-black/55">
-                            {form.active
-                                ? 'Active Account'
-                                : 'Inactive Account'}
-                        </span>
-                    </div>
-                </div>
-            </header>
-
-            <main className="w-full px-4 py-5 sm:px-6 sm:py-7 lg:px-8 xl:px-10">
-                {/* ========================================================= */}
-                {/* PAGE INTRO */}
-                {/* ========================================================= */}
-
-                <div className="mb-6">
-                    <p className="text-xs font-bold text-black/35">
-                        Employee Management
-                    </p>
-
-                    <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
-                        Update employee profile
-                    </h2>
-
-                    <p className="mt-1.5 max-w-2xl text-sm font-medium leading-6 text-black/40">
-                        Update identity, employment, passport,
-                        Hajj information and employee documents.
-                    </p>
-                </div>
-
-                {/* ========================================================= */}
-                {/* ALERTS */}
-                {/* ========================================================= */}
-
-                {success && !showSuccessModal && (
-                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-green-100 bg-green-50 px-4 py-3.5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-black text-white">
-                            ✓
-                        </div>
-
-                        <div>
-                            <p className="text-sm font-black text-green-800">
-                                Changes saved
-                            </p>
-
-                            <p className="mt-0.5 text-xs font-medium text-green-700/70">
-                                {success}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3.5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-500 text-xs font-black text-white">
-                            !
-                        </div>
-
-                        <div>
-                            <p className="text-sm font-black text-red-700">
-                                Update failed
-                            </p>
-
-                            <p className="mt-0.5 text-xs font-medium text-red-600/75">
-                                {error}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                <form
-                    onSubmit={handleSubmit}
-                    className="space-y-6"
-                >
-                    {/* ===================================================== */}
-                    {/* TOP IDENTITY / DOCUMENTS */}
-                    {/* ===================================================== */}
-
-                    <section className="overflow-hidden rounded-[2rem] border border-black/[0.05] bg-white shadow-[0_12px_45px_rgba(0,0,0,0.045)]">
-                        <div className="border-b border-black/[0.05] px-5 py-5 sm:px-7">
-                            <div className="flex items-center justify-between gap-4">
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-brand-green">
-                                        Identity Documents
-                                    </p>
-
-                                    <h2 className="mt-1 text-xl font-black sm:text-2xl">
-                                        Profile & Iqama
-                                    </h2>
+                    {success &&
+                        !showSuccessModal && (
+                            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-green-100 bg-green-50 px-4 py-3.5">
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-black text-white">
+                                    ✓
                                 </div>
 
-                                <div className="hidden rounded-full bg-[#F4F8F6] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black/40 sm:block">
-                                    Max 5MB / image
+                                <div>
+                                    <p className="text-sm font-black text-green-800">
+                                        Changes saved
+                                    </p>
+
+                                    <p className="mt-0.5 text-xs font-medium text-green-700/70">
+                                        {success}
+                                    </p>
                                 </div>
                             </div>
+                        )}
+
+                    {error && (
+                        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-500 text-xs font-black text-white">
+                                !
+                            </div>
+
+                            <div>
+                                <p className="text-sm font-black text-red-700">
+                                    Update failed
+                                </p>
+
+                                <p className="mt-0.5 text-xs font-medium text-red-600/75">
+                                    {error}
+                                </p>
+                            </div>
                         </div>
+                    )}
 
-                        <div className="grid grid-cols-1 gap-6 p-5 sm:p-7 lg:grid-cols-[250px_minmax(0,1fr)]">
-                            {/* PROFILE */}
+                    <form
+                        onSubmit={
+                            handleSubmit
+                        }
+                        className="space-y-6"
+                    >
 
-                            <div className="rounded-[1.5rem] border border-black/[0.05] bg-[#F8FBF9] p-5">
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="relative">
-                                        {avatarPreview ? (
-                                            <img
-                                                src={
-                                                    avatarPreview
-                                                }
-                                                alt={
-                                                    user.name
-                                                }
-                                                className="h-28 w-28 rounded-[1.75rem] object-cover shadow-[0_10px_30px_rgba(0,0,0,0.10)] ring-4 ring-white"
-                                            />
-                                        ) : (
-                                            <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-[#EAF5F0] text-3xl font-black text-brand-green ring-4 ring-white">
-                                                {String(
-                                                    user.name ||
-                                                    'U'
-                                                )
-                                                    .trim()
-                                                    .charAt(
-                                                        0
-                                                    )
-                                                    .toUpperCase()}
-                                            </div>
-                                        )}
+                        {/* ===================================================== */}
+                        {/* TOP IDENTITY / DOCUMENTS */}
+                        {/* ===================================================== */}
 
-                                        <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-brand-green text-xs font-black text-white shadow-lg">
-                                            ✎
-                                        </div>
+                        <section className="overflow-hidden rounded-[2rem] border border-black/[0.05] bg-white shadow-[0_12px_45px_rgba(0,0,0,0.045)]">
+
+                            <div className="border-b border-black/[0.05] px-5 py-5 sm:px-7">
+                                <div className="flex items-center justify-between gap-4">
+
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-brand-green">
+                                            Identity Documents
+                                        </p>
+
+                                        <h2 className="mt-1 text-xl font-black sm:text-2xl">
+                                            Profile & Iqama
+                                        </h2>
                                     </div>
 
-                                    <h3 className="mt-5 max-w-full truncate text-base font-black">
-                                        {user.name ||
-                                            'Unnamed User'}
-                                    </h3>
+                                    <div className="hidden rounded-full bg-[#F4F8F6] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-black/40 sm:block">
+                                        Max 5MB / image
+                                    </div>
 
-                                    <p className="mt-1 max-w-full truncate font-mono text-[11px] font-bold text-black/35">
-                                        {
-                                            user.residentIdNumber
-                                        }
-                                    </p>
+                                </div>
+                            </div>
 
-                                    <label className="mt-5 flex h-11 w-full cursor-pointer items-center justify-center rounded-2xl bg-brand-green px-4 text-xs font-black text-white shadow-sm transition hover:brightness-95 active:scale-[0.98]">
-                                        Change Profile Photo
+                            <div className="grid grid-cols-1 gap-6 p-5 sm:p-7 lg:grid-cols-[250px_minmax(0,1fr)]">
+
+                                {/* PROFILE */}
+
+                                <div className="rounded-[1.5rem] border border-black/[0.05] bg-[#F8FBF9] h-fit p-5">
+                                    <div className="flex flex-col items-center text-center">
+
+                                        <div className="relative">
+                                            {avatarPreview ? (
+                                                <img
+                                                    src={
+                                                        avatarPreview
+                                                    }
+                                                    alt={
+                                                        user.name
+                                                    }
+                                                    className="h-28 w-28 rounded-[1.75rem] object-cover shadow-[0_10px_30px_rgba(0,0,0,0.10)] ring-4 ring-white"
+                                                />
+                                            ) : (
+                                                <div className="flex h-28 w-28 items-center justify-center rounded-[1.75rem] bg-[#EAF5F0] text-3xl font-black text-brand-green ring-4 ring-white">
+                                                    {String(
+                                                        user.name ||
+                                                        'U'
+                                                    )
+                                                        .trim()
+                                                        .charAt(
+                                                            0
+                                                        )
+                                                        .toUpperCase()}
+                                                </div>
+                                            )}
+
+                                            <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-brand-green text-xs font-black text-white shadow-lg">
+                                                ✎
+                                            </div>
+                                        </div>
+
+                                        <h3 className="mt-5 max-w-full truncate text-base font-black">
+                                            {user.name ||
+                                                'Unnamed User'}
+                                        </h3>
+
+                                        <p className="mt-1 max-w-full truncate font-mono text-[11px] font-bold text-black/35">
+                                            {
+                                                user.residentIdNumber
+                                            }
+                                        </p>
+
+                                        <label className="mt-5 flex h-11 w-full cursor-pointer items-center justify-center rounded-2xl bg-brand-green px-4 text-xs font-black text-white shadow-sm transition hover:brightness-95 active:scale-[0.98]">
+                                            Change Profile Photo
+
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={
+                                                    handleAvatarChange
+                                                }
+                                            />
+                                        </label>
+
+                                        {avatarFile && (
+                                            <div className="mt-3 w-full rounded-xl bg-white px-3 py-2 text-left">
+                                                <p className="truncate text-[10px] font-bold text-black/40">
+                                                    New image
+                                                </p>
+
+                                                <p className="mt-0.5 truncate text-xs font-bold text-brand-green">
+                                                    {
+                                                        avatarFile.name
+                                                    }
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* IQAMA */}
+
+                                <div className="min-w-0">
+
+                                    <div className="mb-3 flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-black text-black/60">
+                                                Iqama / Resident ID
+                                            </p>
+
+                                            <p className="mt-0.5 text-[11px] font-medium text-black/30">
+                                                Original aspect ratio is preserved
+                                            </p>
+                                        </div>
+
+                                        {iqamaFile && (
+                                            <span className="shrink-0 rounded-full bg-[#EAF5F0] px-3 py-1.5 text-[10px] font-black text-brand-green">
+                                                New image selected
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed border-black/10 bg-[#FAFCFB] p-3 sm:p-5">
+                                        {iqamaPreview ? (
+                                            <img
+                                                src={
+                                                    iqamaPreview
+                                                }
+                                                alt="Iqama / Resident ID"
+                                                className="block h-auto w-auto max-h-[320px] max-w-full rounded-2xl object-contain"
+                                            />
+                                        ) : (
+                                            <div className="py-16 text-center">
+                                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF5F0] text-xl text-brand-green">
+                                                    ▣
+                                                </div>
+
+                                                <p className="mt-4 text-sm font-black text-black/45">
+                                                    No Iqama image
+                                                </p>
+
+                                                <p className="mt-1 text-xs font-medium text-black/25">
+                                                    Upload the resident ID
+                                                    document below
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <label className="mt-3 flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl border border-brand-green/10 bg-brand-green text-sm font-black text-white shadow-sm transition hover:brightness-95 active:scale-[0.99]">
+                                        {iqamaPreview
+                                            ? 'Replace Iqama Image'
+                                            : 'Upload Iqama Image'}
 
                                         <input
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
                                             onChange={
-                                                handleAvatarChange
+                                                handleIqamaChange
                                             }
                                         />
                                     </label>
 
-                                    {avatarFile && (
-                                        <div className="mt-3 w-full rounded-xl bg-white px-3 py-2 text-left">
-                                            <p className="truncate text-[10px] font-bold text-black/40">
-                                                New image
-                                            </p>
-
-                                            <p className="mt-0.5 truncate text-xs font-bold text-brand-green">
-                                                {
-                                                    avatarFile.name
-                                                }
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* IQAMA */}
-
-                            <div className="min-w-0">
-                                <div className="mb-3 flex items-center justify-between gap-3">
-                                    <div>
-                                        <p className="text-xs font-black text-black/60">
-                                            Iqama / Resident ID
-                                        </p>
-
-                                        <p className="mt-0.5 text-[11px] font-medium text-black/30">
-                                            Original aspect ratio is preserved
-                                        </p>
-                                    </div>
-
                                     {iqamaFile && (
-                                        <span className="shrink-0 rounded-full bg-[#EAF5F0] px-3 py-1.5 text-[10px] font-black text-brand-green">
-                                            New image selected
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div className="flex min-h-[220px] w-full items-center justify-center overflow-hidden rounded-[1.5rem] border border-dashed border-black/10 bg-[#FAFCFB] p-3 sm:p-5">
-                                    {iqamaPreview ? (
-                                        <img
-                                            src={
-                                                iqamaPreview
+                                        <p className="mt-2 truncate text-xs font-bold text-black/35">
+                                            Selected:{' '}
+                                            {
+                                                iqamaFile.name
                                             }
-                                            alt="Iqama / Resident ID"
-                                            className="block h-auto w-auto max-h-[320px] max-w-full rounded-2xl object-contain"
-                                        />
-                                    ) : (
-                                        <div className="py-16 text-center">
-                                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF5F0] text-xl text-brand-green">
-                                                ▣
-                                            </div>
-
-                                            <p className="mt-4 text-sm font-black text-black/45">
-                                                No Iqama image
-                                            </p>
-
-                                            <p className="mt-1 text-xs font-medium text-black/25">
-                                                Upload the resident ID
-                                                document below
-                                            </p>
-                                        </div>
+                                        </p>
                                     )}
                                 </div>
-
-                                <label className="mt-3 flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl border border-brand-green/10 bg-brand-green text-sm font-black text-white shadow-sm transition hover:brightness-95 active:scale-[0.99]">
-                                    {iqamaPreview
-                                        ? 'Replace Iqama Image'
-                                        : 'Upload Iqama Image'}
-
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={
-                                            handleIqamaChange
-                                        }
-                                    />
-                                </label>
-
-                                {iqamaFile && (
-                                    <p className="mt-2 truncate text-xs font-bold text-black/35">
-                                        Selected:{' '}
-                                        {
-                                            iqamaFile.name
-                                        }
-                                    </p>
-                                )}
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    {/* ===================================================== */}
-                    {/* BASIC INFORMATION */}
-                    {/* ===================================================== */}
+                        {/* ===================================================== */}
+                        {/* BASIC INFORMATION */}
+                        {/* ===================================================== */}
 
-                    <FormSection
-                        eyebrow="Personal"
-                        title="Basic Information"
-                        description="Core identity and personal information."
-                    >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <Field
-                                label="Full Name"
-                                value={form.name}
-                                onChange={(value) =>
-                                    updateField(
-                                        'name',
-                                        value
-                                    )
-                                }
-                            />
+                        <FormSection
+                            eyebrow="Personal"
+                            title="Basic Information"
+                            description="Core identity and personal information."
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 
-                            <Field
-                                label="Resident ID / Iqama"
-                                value={
-                                    form.residentIdNumber
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'residentIdNumber',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="ID Version"
-                                value={
-                                    form.idVersion
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'idVersion',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Nationality"
-                                value={
-                                    form.nationality
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'nationality',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Birth City"
-                                value={
-                                    form.birthCity
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'birthCity',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Birth Country"
-                                value={
-                                    form.birthCountry
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'birthCountry',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Date of Birth"
-                                value={
-                                    form.dateOfBirth
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'dateOfBirth',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Marital Status"
-                                value={
-                                    form.maritalStatus
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'maritalStatus',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Religion"
-                                value={
-                                    form.religion
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'religion',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Sponsorship Transfers"
-                                value={
-                                    form.sponsorshipTransfers
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'sponsorshipTransfers',
-                                        value
-                                    )
-                                }
-                                type="number"
-                            />
-                        </div>
-
-                        <Toggle
-                            label="Account Active"
-                            description="Allow this employee to access the application."
-                            checked={form.active}
-                            onChange={(value) =>
-                                updateField(
-                                    'active',
-                                    value
-                                )
-                            }
-                        />
-                    </FormSection>
-
-                    {/* ===================================================== */}
-                    {/* EMPLOYMENT */}
-                    {/* ===================================================== */}
-
-                    <FormSection
-                        eyebrow="Employment"
-                        title="Work Information"
-                        description="Employer, work permit and sponsorship details."
-                    >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <Field
-                                label="Occupation"
-                                value={
-                                    form.occupation
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'occupation',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Employer"
-                                value={
-                                    form.employer
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'employer',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Employer ID Number"
-                                value={
-                                    form.employerIdNumber
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'employerIdNumber',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Work Permit"
-                                value={
-                                    form.workPermit
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'workPermit',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Issue Place"
-                                value={
-                                    form.issuePlace
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'issuePlace',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Resident ID Issue Date"
-                                value={
-                                    form.residentIdIssueDate
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'residentIdIssueDate',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Resident ID Expiry"
-                                value={
-                                    form.residentIdExpiry
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'residentIdExpiry',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Sponsor Name"
-                                value={
-                                    form.sponsorName
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'sponsorName',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Sponsor ID Number"
-                                value={
-                                    form.sponsorIdNumber
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'sponsorIdNumber',
-                                        value
-                                    )
-                                }
-                            />
-                        </div>
-                    </FormSection>
-
-                    {/* ===================================================== */}
-                    {/* PASSPORT */}
-                    {/* ===================================================== */}
-
-                    <FormSection
-                        eyebrow="Passport"
-                        title="Passport Information"
-                        description="Passport identification and validity information."
-                    >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <Field
-                                label="Passport Number"
-                                value={
-                                    form.passportNumber
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportNumber',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Type"
-                                value={
-                                    form.passportType
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportType',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Issuing Date"
-                                value={
-                                    form.passportIssuingDate
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportIssuingDate',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Expiry Date"
-                                value={
-                                    form.passportExpiryDate
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportExpiryDate',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Issuing City"
-                                value={
-                                    form.passportIssuingCity
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportIssuingCity',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Status"
-                                value={
-                                    form.passportStatus
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportStatus',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Amount Deposit"
-                                value={
-                                    form.passportAmountDeposit
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'passportAmountDeposit',
-                                        value
-                                    )
-                                }
-                            />
-                        </div>
-                    </FormSection>
-
-                    {/* ===================================================== */}
-                    {/* HAJJ */}
-                    {/* ===================================================== */}
-
-                    <FormSection
-                        eyebrow="Hajj"
-                        title="Hajj Information"
-                        description="Hajj status and previous pilgrimage information."
-                    >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <Field
-                                label="Hajj Status"
-                                value={
-                                    form.hajjStatus
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'hajjStatus',
-                                        value
-                                    )
-                                }
-                            />
-
-                            <Field
-                                label="Last Hajj Year"
-                                value={
-                                    form.lastHajjYear
-                                }
-                                onChange={(value) =>
-                                    updateField(
-                                        'lastHajjYear',
-                                        value
-                                    )
-                                }
-                            />
-                        </div>
-                    </FormSection>
-
-                    {/* ===================================================== */}
-                    {/* SAVE BAR */}
-                    {/* ===================================================== */}
-
-                    <div className="sticky bottom-3 z-20 pt-1">
-                        <div className="rounded-[1.5rem] border border-black/[0.06] bg-white/95 p-2.5 shadow-[0_15px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:p-3">
-                            <div className="flex items-center gap-2.5 sm:gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        navigate(
-                                            '/admin'
+                                <Field
+                                    label="Full Name"
+                                    value={
+                                        form.name
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'name',
+                                            value
                                         )
                                     }
-                                    disabled={
-                                        saving ||
-                                        uploadingImage
+                                />
+
+                                <Field
+                                    label="Resident ID / Iqama"
+                                    value={
+                                        form.residentIdNumber
                                     }
-                                    className="h-12 flex-1 rounded-2xl bg-[#F4F8F6] px-4 text-sm font-black text-black/55 transition hover:bg-[#EAF5F0] active:scale-[0.98] disabled:opacity-50 sm:flex-none sm:px-8"
+                                    onChange={(value) =>
+                                        updateField(
+                                            'residentIdNumber',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="ID Version"
+                                    value={
+                                        form.idVersion
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'idVersion',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Nationality"
+                                    value={
+                                        form.nationality
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'nationality',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Birth City"
+                                    value={
+                                        form.birthCity
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'birthCity',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Birth Country"
+                                    value={
+                                        form.birthCountry
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'birthCountry',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Date of Birth"
+                                    value={
+                                        form.dateOfBirth
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'dateOfBirth',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+
+                                <SelectField
+                                    label="Marital Status"
+                                    value={
+                                        form.maritalStatus
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'maritalStatus',
+                                            value
+                                        )
+                                    }
                                 >
-                                    Cancel
-                                </button>
+                                    <option value="">
+                                        Select status
+                                    </option>
 
-                                {!hasFormChanges() && (
-                                    <div className="hidden items-center gap-2 rounded-2xl bg-[#F4F8F6] px-4 py-3 sm:flex">
-                                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/[0.06] text-xs font-black text-black/35">
-                                            i
-                                        </span>
+                                    <option value="SINGLE">
+                                        SINGLE
+                                    </option>
 
-                                        <span className="text-xs font-bold text-black/35">
-                                            No changes to save
-                                        </span>
-                                    </div>
+                                    <option value="MARRIED">
+                                        MARRIED
+                                    </option>
+
+                                    <option value="DIVORCED">
+                                        DIVORCED
+                                    </option>
+
+                                    <option value="WIDOWED">
+                                        WIDOWED
+                                    </option>
+                                </SelectField>
+
+                                <Field
+                                    label="Religion"
+                                    value={
+                                        form.religion
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'religion',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Sponsorship Transfers"
+                                    value={
+                                        form.sponsorshipTransfers
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'sponsorshipTransfers',
+                                            value
+                                        )
+                                    }
+                                    type="number"
+                                />
+                            </div>
+
+                            <Toggle
+                                label="Account Active"
+                                description="Allow this employee to access the application."
+                                checked={
+                                    form.active
+                                }
+                                onChange={(value) =>
+                                    updateField(
+                                        'active',
+                                        value
+                                    )
+                                }
+                            />
+                        </FormSection>
+
+                        {/* ===================================================== */}
+                        {/* EMPLOYMENT */}
+                        {/* ===================================================== */}
+
+                        <FormSection
+                            eyebrow="Employment"
+                            title="Work Information"
+                            description="Employer, work permit and sponsorship details."
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+                                <Field
+                                    label="Occupation"
+                                    value={
+                                        form.occupation
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'occupation',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Employer"
+                                    value={
+                                        form.employer
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'employer',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Employer ID Number"
+                                    value={
+                                        form.employerIdNumber
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'employerIdNumber',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Work Permit"
+                                    value={
+                                        form.workPermit
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'workPermit',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Issue Place"
+                                    value={
+                                        form.issuePlace
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'issuePlace',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Resident ID Issue Date"
+                                    value={
+                                        form.residentIdIssueDate
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'residentIdIssueDate',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+
+                                <Field
+                                    label="Resident ID Expiry"
+                                    value={
+                                        form.residentIdExpiry
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'residentIdExpiry',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+
+                                <Field
+                                    label="Sponsor Name"
+                                    value={
+                                        form.sponsorName
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'sponsorName',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <Field
+                                    label="Sponsor ID Number"
+                                    value={
+                                        form.sponsorIdNumber
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'sponsorIdNumber',
+                                            value
+                                        )
+                                    }
+                                />
+                            </div>
+                        </FormSection>
+
+                        {/* ===================================================== */}
+                        {/* PASSPORT */}
+                        {/* ===================================================== */}
+
+                        <FormSection
+                            eyebrow="Passport"
+                            title="Passport Information"
+                            description="Passport identification and validity information."
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+                                <Field
+                                    label="Passport Number"
+                                    value={
+                                        form.passportNumber
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportNumber',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <SelectField
+                                    label="Type"
+                                    value={
+                                        form.passportType
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportType',
+                                            value
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        Select passport type
+                                    </option>
+
+                                    <option value="Normal">
+                                        Normal
+                                    </option>
+
+                                    <option value="Diplomatic">
+                                        Diplomatic
+                                    </option>
+
+                                    <option value="Official">
+                                        Official
+                                    </option>
+                                </SelectField>
+
+                                <Field
+                                    label="Issuing Date"
+                                    value={
+                                        form.passportIssuingDate
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportIssuingDate',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+
+                                <Field
+                                    label="Expiry Date"
+                                    value={
+                                        form.passportExpiryDate
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportExpiryDate',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+
+                                <Field
+                                    label="Issuing City"
+                                    value={
+                                        form.passportIssuingCity
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportIssuingCity',
+                                            value
+                                        )
+                                    }
+                                />
+
+                                <SelectField
+                                    label="Status"
+                                    value={
+                                        form.passportStatus
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportStatus',
+                                            value
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        Select status
+                                    </option>
+
+                                    <option value="Active">
+                                        Active
+                                    </option>
+
+                                    <option value="Expired">
+                                        Expired
+                                    </option>
+
+                                    <option value="Cancelled">
+                                        Cancelled
+                                    </option>
+                                </SelectField>
+
+                                <Field
+                                    label="Amount Deposit"
+                                    value={
+                                        form.passportAmountDeposit
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'passportAmountDeposit',
+                                            value
+                                        )
+                                    }
+                                />
+                            </div>
+                        </FormSection>
+
+                        {/* ===================================================== */}
+                        {/* HAJJ */}
+                        {/* ===================================================== */}
+
+                        <FormSection
+                            eyebrow="Hajj"
+                            title="Hajj Information"
+                            description="Hajj status and previous pilgrimage information."
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+                                <SelectField
+                                    label="Hajj Status"
+                                    value={
+                                        form.hajjStatus
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'hajjStatus',
+                                            value
+                                        )
+                                    }
+                                >
+                                    <option value="">
+                                        Select Hajj status
+                                    </option>
+
+                                    <option value="eligible">
+                                        Eligible
+                                    </option>
+
+                                    <option value="not_eligible">
+                                        Not Eligible
+                                    </option>
+
+                                    <option value="completed">
+                                        Completed
+                                    </option>
+                                </SelectField>
+
+                                <Field
+                                    label="Last Hajj Year"
+                                    value={
+                                        form.lastHajjYear
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'lastHajjYear',
+                                            value
+                                        )
+                                    }
+                                    type="number"
+                                />
+                            </div>
+                        </FormSection>
+
+                        {/* ===================================================== */}
+                        {/* HEALTH INSURANCE */}
+                        {/* ===================================================== */}
+
+                        <FormSection
+                            eyebrow="Health Insurance"
+                            title="Health Insurance Information"
+                            description="Employee medical insurance issuing and expiry information."
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+                                <Field
+                                    label="Insurance Issuing Date"
+                                    value={
+                                        form.insuranceIssuingDate
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'insuranceIssuingDate',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+
+                                <Field
+                                    label="Insurance Expiry Date"
+                                    value={
+                                        form.insuranceExpiryDate
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'insuranceExpiryDate',
+                                            value
+                                        )
+                                    }
+                                    type="date"
+                                />
+                            </div>
+                        </FormSection>
+
+                        {/* ===================================================== */}
+                        {/* ACCOUNT SECURITY */}
+                        {/* ===================================================== */}
+
+                        <FormSection
+                            eyebrow="Security"
+                            title="Account Security"
+                            description="Update the employee login password. Leave these fields empty if you do not want to change the password."
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+
+                                <PasswordField
+                                    label="Current Password"
+                                    value={
+                                        form.currentPassword
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'currentPassword',
+                                            value
+                                        )
+                                    }
+                                    placeholder="Enter current password"
+                                    show={
+                                        showCurrentPassword
+                                    }
+                                    onToggle={() =>
+                                        setShowCurrentPassword(
+                                            (previous) =>
+                                                !previous
+                                        )
+                                    }
+                                />
+
+                                <PasswordField
+                                    label="New Password"
+                                    value={
+                                        form.newPassword
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'newPassword',
+                                            value
+                                        )
+                                    }
+                                    placeholder="Enter new password"
+                                    show={
+                                        showNewPassword
+                                    }
+                                    onToggle={() =>
+                                        setShowNewPassword(
+                                            (previous) =>
+                                                !previous
+                                        )
+                                    }
+                                />
+
+                                <PasswordField
+                                    label="Confirm New Password"
+                                    value={
+                                        form.confirmNewPassword
+                                    }
+                                    onChange={(value) =>
+                                        updateField(
+                                            'confirmNewPassword',
+                                            value
+                                        )
+                                    }
+                                    placeholder="Re-enter new password"
+                                    show={
+                                        showConfirmPassword
+                                    }
+                                    onToggle={() =>
+                                        setShowConfirmPassword(
+                                            (previous) =>
+                                                !previous
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            {form.newPassword &&
+                                form.confirmNewPassword &&
+                                form.newPassword !==
+                                    form.confirmNewPassword && (
+                                    <p className="mt-3 text-xs font-bold text-red-500">
+                                        New passwords do not match.
+                                    </p>
                                 )}
 
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        saving ||
-                                        uploadingImage ||
-                                        !hasFormChanges()
-                                    }
-                                    className="flex h-12 flex-[1.5] items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 text-sm font-black text-white shadow-[0_8px_22px_rgba(25,118,83,0.22)] transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:min-w-[190px]"
-                                >
-                                    {saving ||
-                                        uploadingImage ? (
-                                        <>
-                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            {form.newPassword &&
+                                form.confirmNewPassword &&
+                                form.newPassword ===
+                                    form.confirmNewPassword && (
+                                    <p className="mt-3 text-xs font-bold text-emerald-600">
+                                        New passwords match.
+                                    </p>
+                                )}
 
-                                            <span>
-                                                {uploadingImage
-                                                    ? 'Uploading...'
-                                                    : 'Saving...'}
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span>
-                                                Save Changes
+                            <div className="mt-5 rounded-2xl bg-[#F4F8F6] px-4 py-3">
+                                <p className="text-xs font-semibold leading-5 text-black/45">
+                                    Password must contain at least 6
+                                    characters. The password will be
+                                    securely hashed before storage.
+                                </p>
+                            </div>
+                        </FormSection>
+
+                        {/* ===================================================== */}
+                        {/* SAVE BAR */}
+                        {/* ===================================================== */}
+
+                        <div className="sticky bottom-3 z-20 pt-1">
+                            <div className="rounded-[1.5rem] border border-black/[0.06] bg-white/95 p-2.5 shadow-[0_15px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:p-3">
+
+                                <div className="flex items-center gap-2.5 sm:gap-3">
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            navigate(
+                                                '/admin'
+                                            )
+                                        }
+                                        disabled={
+                                            saving ||
+                                            uploadingImage
+                                        }
+                                        className="h-12 flex-1 rounded-2xl bg-[#F4F8F6] px-4 text-sm font-black text-black/55 transition hover:bg-[#EAF5F0] active:scale-[0.98] disabled:opacity-50 sm:flex-none sm:px-8"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    {!hasFormChanges() && (
+                                        <div className="hidden items-center gap-2 rounded-2xl bg-[#F4F8F6] px-4 py-3 sm:flex">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/[0.06] text-xs font-black text-black/35">
+                                                i
                                             </span>
 
-                                            <span className="text-base">
-                                                ✓
+                                            <span className="text-xs font-bold text-black/35">
+                                                No changes to save
                                             </span>
-                                        </>
+                                        </div>
                                     )}
-                                </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            saving ||
+                                            uploadingImage ||
+                                            !hasFormChanges()
+                                        }
+                                        className="flex h-12 flex-[1.5] items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 text-sm font-black text-white shadow-[0_8px_22px_rgba(25,118,83,0.22)] transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:min-w-[190px]"
+                                    >
+                                        {saving ||
+                                            uploadingImage ? (
+                                            <>
+                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+
+                                                <span>
+                                                    {uploadingImage
+                                                        ? 'Uploading...'
+                                                        : 'Saving...'}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>
+                                                    Save Changes
+                                                </span>
+
+                                                <span className="text-base">
+                                                    ✓
+                                                </span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </form>
-            </main>
+                    </form>
+                </main>
 
-            {/* ============================================================= */}
-            {/* MODAL ANIMATIONS */}
-            {/* ============================================================= */}
+                {/* ============================================================= */}
+                {/* MODAL ANIMATIONS */}
+                {/* ============================================================= */}
 
-            <style>{`
-                @keyframes scaleIn {
-                    from {
-                        opacity: 0;
-                        transform: scale(0.94) translateY(8px);
+                <style>{`
+                    @keyframes scaleIn {
+                        from {
+                            opacity: 0;
+                            transform: scale(0.94) translateY(8px);
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: scale(1) translateY(0);
+                        }
                     }
 
-                    to {
-                        opacity: 1;
-                        transform: scale(1) translateY(0);
-                    }
-                }
+                    @keyframes progress {
+                        from {
+                            transform: scaleX(0);
+                        }
 
-                @keyframes progress {
-                    from {
-                        transform: scaleX(0);
+                        to {
+                            transform: scaleX(1);
+                        }
                     }
-
-                    to {
-                        transform: scaleX(1);
-                    }
-                }
-            `}</style>
-        </div>
+                `}</style>
+            </div>
+        </AdminPageLayout>
     );
 }
 
@@ -1643,6 +2415,7 @@ function FormSection({
 }) {
     return (
         <section className="rounded-[2rem] border border-black/[0.05] bg-white p-5 shadow-[0_10px_35px_rgba(0,0,0,0.035)] sm:p-7">
+
             <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-brand-green">
                     {eyebrow}
@@ -1683,6 +2456,7 @@ function Field({
 }) {
     return (
         <label className="group block">
+
             <span className="mb-2 block text-[11px] font-black uppercase tracking-wide text-black/45 transition group-focus-within:text-brand-green">
                 {label}
             </span>
@@ -1691,10 +2465,109 @@ function Field({
                 type={type}
                 value={value}
                 onChange={(event) =>
-                    onChange(event.target.value)
+                    onChange(
+                        event.target.value
+                    )
                 }
                 className="h-[52px] w-full rounded-2xl border border-transparent bg-[#F4F8F6] px-4 text-sm font-semibold text-black outline-none transition placeholder:text-black/20 focus:border-brand-green/20 focus:bg-white focus:ring-4 focus:ring-brand-green/5"
             />
+        </label>
+    );
+}
+
+// ============================================================================
+// SELECT FIELD
+// ============================================================================
+
+function SelectField({
+    label,
+    value,
+    onChange,
+    children,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    children: ReactNode;
+}) {
+    return (
+        <label className="group block">
+
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-wide text-black/45 transition group-focus-within:text-brand-green">
+                {label}
+            </span>
+
+            <select
+                value={value}
+                onChange={(event) =>
+                    onChange(
+                        event.target.value
+                    )
+                }
+                className="h-[52px] w-full rounded-2xl border border-transparent bg-[#F4F8F6] px-4 text-sm font-semibold text-black outline-none transition focus:border-brand-green/20 focus:bg-white focus:ring-4 focus:ring-brand-green/5"
+            >
+                {children}
+            </select>
+        </label>
+    );
+}
+
+// ============================================================================
+// PASSWORD FIELD
+// ============================================================================
+
+function PasswordField({
+    label,
+    value,
+    onChange,
+    placeholder,
+    show,
+    onToggle,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+    show: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <label className="group block">
+
+            <span className="mb-2 block text-[11px] font-black uppercase tracking-wide text-black/45 transition group-focus-within:text-brand-green">
+                {label}
+            </span>
+
+            <div className="relative">
+
+                <input
+                    type={
+                        show
+                            ? 'text'
+                            : 'password'
+                    }
+                    value={value}
+                    onChange={(event) =>
+                        onChange(
+                            event.target.value
+                        )
+                    }
+                    placeholder={placeholder}
+                    className="h-[52px] w-full rounded-2xl border border-transparent bg-[#F4F8F6] px-4 pr-12 text-sm font-semibold text-black outline-none transition placeholder:text-black/20 focus:border-brand-green/20 focus:bg-white focus:ring-4 focus:ring-brand-green/5"
+                />
+
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-black/35 transition hover:bg-white hover:text-black/70"
+                >
+                    {show ? (
+                        <EyeOff size={17} />
+                    ) : (
+                        <Eye size={17} />
+                    )}
+                </button>
+            </div>
         </label>
     );
 }
@@ -1716,6 +2589,7 @@ function Toggle({
 }) {
     return (
         <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-black/[0.04] bg-[#F7FAF8] p-4 sm:p-5">
+
             <div>
                 <p className="text-sm font-black">
                     {label}
@@ -1735,16 +2609,18 @@ function Toggle({
                 onClick={() =>
                     onChange(!checked)
                 }
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked
-                    ? 'bg-brand-green'
-                    : 'bg-black/15'
-                    }`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${
+                    checked
+                        ? 'bg-brand-green'
+                        : 'bg-black/15'
+                }`}
             >
                 <span
-                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${checked
-                        ? 'left-6'
-                        : 'left-1'
-                        }`}
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                        checked
+                            ? 'left-6'
+                            : 'left-1'
+                    }`}
                 />
             </button>
         </div>

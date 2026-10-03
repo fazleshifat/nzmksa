@@ -62,26 +62,58 @@ body {
   .admin-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #7f8985;
   }
-}
 
-.session-details-scrollbar {
-  scrollbar-width: auto;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
-}
+  .session-details-scrollbar {
+    scrollbar-width: auto;
+    scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  }
 
-.session-details-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
+  .session-details-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
 
-.session-details-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
+  .session-details-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.session-details-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 999px;
-}
+  .session-details-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 999px;
+  }
 
-.session-details-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  .session-details-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /* =========================================================
+     STANDALONE ADMIN PAGES
+     View User / Edit User / Create User / Future Pages
+     ========================================================= */
+
+  .admin-page-scrollbar {
+    height: 100vh;
+    overflow-y: auto;
+
+    scrollbar-width: auto;
+    scrollbar-color: #828e89 #f1f4f3;
+  }
+
+  .admin-page-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+  }
+
+  .admin-page-scrollbar::-webkit-scrollbar-track {
+    background: #f1f4f3;
+  }
+
+  .admin-page-scrollbar::-webkit-scrollbar-thumb {
+    background: #717f79;
+    border-radius: 10px;
+  }
+
+  .admin-page-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #7f8985;
+  }
+
 }

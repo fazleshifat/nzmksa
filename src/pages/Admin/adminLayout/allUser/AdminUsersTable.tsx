@@ -212,93 +212,105 @@ export default function AdminUsersTable(props: Props) {
               </thead>
 
               <tbody>
-                {users.map((user, index) => {
-                  const userId = user.id || user._id || "";
-                  const serialNumber =
-                    (currentPage - 1) * 10 + index + 1;
+                {[...users]
+                  .sort((a, b) => {
+                    const aTime = a.updatedAt
+                      ? new Date(String(a.updatedAt)).getTime()
+                      : 0;
 
-                  return (
-                    <tr
-                      key={userId || user.residentIdNumber}
-                      className="group border-b border-black/[0.045] transition last:border-b-0 hover:bg-[#FAFCFB]"
-                    >
-                      <td className="px-5 py-4 text-center">
-                        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#F4F8F6] px-1.5 text-[10px] font-black text-black/40">
-                          {serialNumber}
-                        </span>
-                      </td>
+                    const bTime = b.updatedAt
+                      ? new Date(String(b.updatedAt)).getTime()
+                      : 0;
 
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <UserAvatar user={user} />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-black">
-                              {user.name || "Unnamed User"}
-                            </p>
-                            <p className="mt-0.5 truncate text-[11px] font-medium text-black/35">
-                              {user.occupation ||
-                                user.birthCountry ||
-                                user.nationality ||
-                                "Employee"}
-                            </p>
+                    return bTime - aTime;
+                  })
+                  .map((user, index) => {
+                    const userId = user.id || user._id || "";
+                    const serialNumber =
+                      (currentPage - 1) * 10 + index + 1;
+
+                    return (
+                      <tr
+                        key={userId || user.residentIdNumber}
+                        className="group border-b border-black/[0.045] transition last:border-b-0 hover:bg-[#FAFCFB]"
+                      >
+                        <td className="px-5 py-4 text-center">
+                          <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#F4F8F6] px-1.5 text-[10px] font-black text-black/40">
+                            {serialNumber}
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <UserAvatar user={user} />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-black">
+                                {user.name || "Unnamed User"}
+                              </p>
+                              <p className="mt-0.5 truncate text-[11px] font-medium text-black/35">
+                                {user.occupation ||
+                                  user.birthCountry ||
+                                  user.nationality ||
+                                  "Employee"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <span className="rounded-lg bg-[#F7F9F8] px-2.5 py-1.5 font-mono text-[11px] font-bold text-black/60">
-                          {user.residentIdNumber || "—"}
-                        </span>
-                      </td>
+                        <td className="px-5 py-4">
+                          <span className="rounded-lg bg-[#F7F9F8] px-2.5 py-1.5 font-mono text-[11px] font-bold text-black/60">
+                            {user.residentIdNumber || "—"}
+                          </span>
+                        </td>
 
-                      <td className="px-5 py-4 text-xs font-semibold text-black/55">
-                        {user.nationality || "—"}
-                      </td>
+                        <td className="px-5 py-4 text-xs font-semibold text-black/55">
+                          {user.nationality || "—"}
+                        </td>
 
-                      <td className="max-w-[180px] px-5 py-4">
-                        <span className="block truncate text-xs font-semibold text-black/55">
-                          {user.sponsorName || "—"}
-                        </span>
-                      </td>
+                        <td className="max-w-[180px] px-5 py-4">
+                          <span className="block truncate text-xs font-semibold text-black/55">
+                            {user.sponsorName || "—"}
+                          </span>
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <StatusBadge active={user.active !== false} />
-                      </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge active={user.active !== false} />
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1.5">
-                          <ActionButton
-                            title="View employee"
-                            onClick={() => onView(userId)}
-                          >
-                            <Eye size={15} />
-                          </ActionButton>
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-1.5">
+                            <ActionButton
+                              title="View employee"
+                              onClick={() => onView(userId)}
+                            >
+                              <Eye size={15} />
+                            </ActionButton>
 
-                          <ActionButton
-                            title="Edit employee"
-                            green
-                            onClick={() => onEdit(userId)}
-                          >
-                            <Pencil size={15} />
-                          </ActionButton>
+                            <ActionButton
+                              title="Edit employee"
+                              green
+                              onClick={() => onEdit(userId)}
+                            >
+                              <Pencil size={15} />
+                            </ActionButton>
 
-                          <ActionButton
-                            title="Delete employee"
-                            danger
-                            disabled={deletingId === userId}
-                            onClick={() => onDelete(user)}
-                          >
-                            {deletingId === userId ? (
-                              <RefreshCw size={14} className="animate-spin" />
-                            ) : (
-                              <Trash2 size={15} />
-                            )}
-                          </ActionButton>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                            <ActionButton
+                              title="Delete employee"
+                              danger
+                              disabled={deletingId === userId}
+                              onClick={() => onDelete(user)}
+                            >
+                              {deletingId === userId ? (
+                                <RefreshCw size={14} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={15} />
+                              )}
+                            </ActionButton>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -331,11 +343,10 @@ export default function AdminUsersTable(props: Props) {
                       key={page}
                       type="button"
                       onClick={() => onPageChange(page)}
-                      className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-black ${
-                        currentPage === page
+                      className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-black ${currentPage === page
                           ? "bg-brand-green text-white shadow-sm"
                           : "border border-black/10 bg-white text-black/50 hover:bg-black/5"
-                      }`}
+                        }`}
                     >
                       {page}
                     </button>
@@ -384,14 +395,12 @@ function UserAvatar({ user }: { user: Employee }) {
 function StatusBadge({ active }: { active: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-black ${
-        active ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-black ${active ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
+        }`}
     >
       <span
-        className={`h-1.5 w-1.5 rounded-full ${
-          active ? "bg-green-500" : "bg-red-500"
-        }`}
+        className={`h-1.5 w-1.5 rounded-full ${active ? "bg-green-500" : "bg-red-500"
+          }`}
       />
       {active ? "Active" : "Inactive"}
     </span>
@@ -419,13 +428,12 @@ function ActionButton({
       title={title}
       disabled={disabled}
       onClick={onClick}
-      className={`flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
-        danger
+      className={`flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${danger
           ? "bg-red-50 text-red-500 hover:bg-red-100"
           : green
-          ? "bg-[#EAF5F0] text-brand-green hover:bg-[#DFF0E9]"
-          : "bg-[#F4F8F6] text-black/50 hover:bg-[#EAF5F0] hover:text-brand-green"
-      }`}
+            ? "bg-[#EAF5F0] text-brand-green hover:bg-[#DFF0E9]"
+            : "bg-[#F4F8F6] text-black/50 hover:bg-[#EAF5F0] hover:text-brand-green"
+        }`}
     >
       {children}
     </button>
