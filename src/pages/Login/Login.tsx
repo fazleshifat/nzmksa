@@ -228,26 +228,12 @@ export default function Login() {
         loggedInRole === 'admin' ||
         loggedInRole === 'superadmin'
       ) {
-        /*
-         * Every account type can now register a passkey.
-         *
-         * Employee:
-         *   no passkey → show setup
-         *
-         * Admin:
-         *   no passkey → show setup
-         *
-         * Super Admin:
-         *   no passkey → show setup
-         */
-
         if (!hasPasskey) {
           setShowPasskeySetup(true);
 
           return;
         }
 
-        // Existing passkey → go directly to dashboard.
         navigate(
           getDashboardRoute(
             loggedInRole
@@ -289,22 +275,9 @@ export default function Login() {
     async () => {
       setError('');
 
-      /*
-       * PasskeyLoginButton already receives
-       * the identifier from the input field.
-       */
-
       await saveLastLoginIdentifier(
         idNumber
       );
-
-      /*
-       * AuthContext saves the exact role:
-       *
-       * user
-       * admin
-       * superadmin
-       */
 
       const roleResult =
         await Preferences.get({
@@ -389,8 +362,6 @@ export default function Login() {
         );
 
         /*
-         * IMPORTANT:
-         *
          * Employee       → /home
          * Admin          → /admin
          * Super Admin    → /admin
@@ -709,24 +680,33 @@ export default function Login() {
       </form>
 
       {/* ================================================================== */}
-      {/* PASSKEY SETUP MODAL */}
+      {/* PASSKEY SETUP BOTTOM SHEET */}
       {/* ================================================================== */}
 
       {showPasskeySetup && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4 backdrop-blur-[2px]">
+        <div
+          className="fixed inset-0 z-50 flex items-end bg-black/40 backdrop-blur-[2px]"
+          role="presentation"
+        >
+
+          {/* ================================================================ */}
+          {/* Bottom Sheet */}
+          {/* ================================================================ */}
 
           <div
-            className="w-full max-w-md rounded-[28px] bg-white px-6 pb-6 pt-5 shadow-2xl"
+            className="w-full animate-[passkeySheetUp_280ms_ease-out] rounded-t-[30px] bg-white px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-3 shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="passkey-setup-title"
           >
 
-            {/* ========================================================== */}
-            {/* Close */}
-            {/* ========================================================== */}
+            {/* ============================================================ */}
+            {/* Small Handle + Close */}
+            {/* ============================================================ */}
 
-            <div className="flex justify-end">
+            <div className="relative flex h-9 items-center justify-center">
+
+              <span className="h-1 w-10 rounded-full bg-black/15" />
 
               <button
                 type="button"
@@ -737,25 +717,25 @@ export default function Login() {
                 disabled={
                   isSettingUpPasskey
                 }
-                className="flex h-9 w-9 items-center justify-center rounded-full text-black/45 active:bg-black/5 disabled:opacity-40"
+                className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center rounded-full text-black/45 active:bg-black/5 disabled:opacity-40"
               >
                 <X
-                  size={20}
+                  size={19}
                 />
               </button>
 
             </div>
 
-            {/* ========================================================== */}
+            {/* ============================================================ */}
             {/* Icon */}
-            {/* ========================================================== */}
+            {/* ============================================================ */}
 
             <div className="mt-1 flex justify-center">
 
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-green/10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green/10">
 
                 <Fingerprint
-                  size={34}
+                  size={30}
                   strokeWidth={1.9}
                   className="text-brand-green"
                 />
@@ -764,45 +744,29 @@ export default function Login() {
 
             </div>
 
-            {/* ========================================================== */}
+            {/* ============================================================ */}
             {/* Title */}
-            {/* ========================================================== */}
+            {/* ============================================================ */}
 
             <h2
               id="passkey-setup-title"
-              className="mt-5 text-center text-[21px] font-bold tracking-tight text-black"
+              className="mt-3 text-center text-[20px] font-bold tracking-tight text-black"
             >
               Set Up Passkey
             </h2>
 
-            {/* ========================================================== */}
-            {/* Description */}
-            {/* ========================================================== */}
+            {/* ============================================================ */}
+            {/* Short Description */}
+            {/* ============================================================ */}
 
-            <p className="mx-auto mt-2 max-w-[310px] text-center text-[13px] leading-5 text-black/55">
-              Use your fingerprint,
-              face recognition, or
-              device security to sign
-              in faster next time.
+            <p className="mt-1.5 text-center text-[13px] leading-5 text-black/50">
+              Use your device security
+              for faster sign-in.
             </p>
 
-            {/* ========================================================== */}
-            {/* Security note */}
-            {/* ========================================================== */}
-
-            <div className="mt-5 rounded-2xl bg-[#F4F8F6] px-4 py-3">
-
-              <p className="text-center text-[12px] leading-5 text-black/55">
-                Your biometric data stays
-                on your device. It is
-                never sent to Absher.
-              </p>
-
-            </div>
-
-            {/* ========================================================== */}
-            {/* Set Up */}
-            {/* ========================================================== */}
+            {/* ============================================================ */}
+            {/* Set Up Button */}
+            {/* ============================================================ */}
 
             <button
               type="button"
@@ -812,11 +776,11 @@ export default function Login() {
               disabled={
                 isSettingUpPasskey
               }
-              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-green-800/70 text-[15px] font-bold text-white shadow-sm active:scale-[0.99] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-green-800/70 text-[15px] font-bold text-white shadow-sm active:scale-[0.99] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
             >
 
               <Fingerprint
-                size={21}
+                size={20}
                 strokeWidth={2.2}
               />
 
@@ -828,9 +792,9 @@ export default function Login() {
 
             </button>
 
-            {/* ========================================================== */}
+            {/* ============================================================ */}
             {/* Maybe Later */}
-            {/* ========================================================== */}
+            {/* ============================================================ */}
 
             <button
               type="button"
@@ -840,7 +804,7 @@ export default function Login() {
               disabled={
                 isSettingUpPasskey
               }
-              className="mt-2 flex h-12 w-full items-center justify-center text-[14px] font-semibold text-brand-green active:opacity-60 disabled:opacity-40"
+              className="mt-1 flex h-10 w-full items-center justify-center text-[13px] font-semibold text-brand-green active:opacity-60 disabled:opacity-40"
             >
               Maybe Later
             </button>
@@ -849,6 +813,24 @@ export default function Login() {
 
         </div>
       )}
+
+      {/* ================================================================== */}
+      {/* Bottom Sheet Animation */}
+      {/* ================================================================== */}
+
+      <style>
+        {`
+          @keyframes passkeySheetUp {
+            from {
+              transform: translateY(100%);
+            }
+
+            to {
+              transform: translateY(0);
+            }
+          }
+        `}
+      </style>
 
     </div>
   );

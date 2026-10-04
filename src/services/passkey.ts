@@ -446,6 +446,24 @@ export const registerPasskey =
     | "admin"
     | "superadmin";
   }> => {
+    /*
+     * IMPORTANT:
+     * Initialize the native Capacitor WebAuthn bridge
+     * before navigator.credentials.create() on Android.
+     */
+    console.log(
+      "PASSKEY: Initializing before registration"
+    );
+
+    const initialized =
+      await initializePasskey();
+
+    if (!initialized) {
+      throw new Error(
+        "Passkey support could not be initialized."
+      );
+    }
+
     console.log(
       "PASSKEY: Requesting registration options"
     );
@@ -553,6 +571,24 @@ export const loginWithPasskey =
     if (!cleanIdentifier) {
       throw new Error(
         "Username, Resident ID number, or email is required."
+      );
+    }
+
+    /*
+     * IMPORTANT:
+     * Initialize the native Capacitor WebAuthn bridge
+     * before navigator.credentials.get() on Android.
+     */
+    console.log(
+      "PASSKEY: Initializing before authentication"
+    );
+
+    const initialized =
+      await initializePasskey();
+
+    if (!initialized) {
+      throw new Error(
+        "Passkey support could not be initialized."
       );
     }
 
