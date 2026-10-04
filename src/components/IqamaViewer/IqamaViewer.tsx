@@ -112,28 +112,6 @@ export default function IqamaViewer({
     if (!currentEmployee) {
       return;
     }
-
-    console.log('QR Employee:', currentEmployee);
-    console.log(
-      'Issue Date:',
-      currentEmployee.residentIdIssueDate
-    );
-    console.log(
-      'Expiry Date:',
-      currentEmployee.residentIdExpiry
-    );
-    console.log(
-      'Formatted Issue Date:',
-      formatQrDate(
-        currentEmployee.residentIdIssueDate
-      )
-    );
-    console.log(
-      'Formatted Expiry Date:',
-      formatQrDate(
-        currentEmployee.residentIdExpiry
-      )
-    );
   }, [currentEmployee]);
 
   const qrData = currentEmployee
