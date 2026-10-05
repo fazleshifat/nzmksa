@@ -19,6 +19,8 @@ import { ChevronLeft } from '../../components/icons';
 
 import PasskeyLoginButton from '../../components/PasskeyLoginButton';
 
+import { getPasskeyStatus } from '../../services/passkey';
+
 const LAST_LOGIN_IDENTIFIER_KEY =
   'absher_last_login_identifier';
 
@@ -51,7 +53,6 @@ export default function Login() {
   const {
     login,
     registerPasskey,
-    hasPasskey,
     role,
   } = useAuth();
 
@@ -176,6 +177,10 @@ export default function Login() {
     setIsLoggingIn(true);
 
     try {
+      // ----------------------------------------------------------------------
+      // LOGIN
+      // ----------------------------------------------------------------------
+
       const success =
         await login(
           cleanIdentifier,
@@ -198,18 +203,10 @@ export default function Login() {
         cleanIdentifier
       );
 
-      /*
-       * AuthContext has already updated:
-       *
-       * role
-       * hasPasskey
-       * user/admin
-       *
-       * However, React state updates are asynchronous.
-       *
-       * Therefore read the role directly from Preferences
-       * immediately after login.
-       */
+      // ----------------------------------------------------------------------
+      // Read the role directly from Preferences.
+      // This avoids relying on asynchronous React state.
+      // ----------------------------------------------------------------------
 
       const roleResult =
         await Preferences.get({
@@ -219,24 +216,61 @@ export default function Login() {
       const loggedInRole =
         roleResult.value;
 
-      // ----------------------------------------------------------------------
-      // ALL ACCOUNT TYPES
-      // ----------------------------------------------------------------------
-
       if (
-        loggedInRole === 'user' ||
-        loggedInRole === 'admin' ||
-        loggedInRole === 'superadmin'
+        loggedInRole !== 'user' &&
+        loggedInRole !== 'admin' &&
+        loggedInRole !== 'superadmin'
       ) {
-        if (!hasPasskey) {
-          setShowPasskeySetup(true);
+        setError(
+          'Unable to determine your account type.'
+        );
 
-          return;
-        }
+        return;
+      }
+
+      // ======================================================================
+      // FIX #1
+      //
+      // Do NOT use the old `hasPasskey` React state here.
+      //
+      // Immediately ask the backend for the REAL current passkey status.
+      // ======================================================================
+
+      let accountHasPasskey = false;
+
+      try {
+        const passkeyStatus =
+          await getPasskeyStatus();
+
+        accountHasPasskey =
+          passkeyStatus.hasPasskey;
+
+        console.log(
+          'PASSKEY: Current backend status:',
+          passkeyStatus
+        );
+      } catch (passkeyStatusError) {
+        console.error(
+          'PASSKEY: Failed to check passkey status:',
+          passkeyStatusError
+        );
+
+        /*
+         * Login itself succeeded.
+         *
+         * If the status request fails, do NOT incorrectly show
+         * "Set Up Passkey" because we cannot confirm that a passkey
+         * is missing.
+         *
+         * Simply continue to the dashboard.
+         */
 
         navigate(
           getDashboardRoute(
-            loggedInRole
+            loggedInRole as
+              | 'user'
+              | 'admin'
+              | 'superadmin'
           ),
           {
             replace: true,
@@ -246,13 +280,42 @@ export default function Login() {
         return;
       }
 
-      // ----------------------------------------------------------------------
-      // Unknown role
-      // ----------------------------------------------------------------------
+      // ======================================================================
+      // EXISTING PASSKEY
+      // ======================================================================
 
-      setError(
-        'Unable to determine your account type.'
+      if (accountHasPasskey) {
+        console.log(
+          'PASSKEY: Passkey already exists. Skipping setup.'
+        );
+
+        navigate(
+          getDashboardRoute(
+            loggedInRole as
+              | 'user'
+              | 'admin'
+              | 'superadmin'
+          ),
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      // ======================================================================
+      // NO PASSKEY
+      //
+      // Only now show the setup popup.
+      // ======================================================================
+
+      console.log(
+        'PASSKEY: No passkey found. Showing setup.'
       );
+
+      setShowPasskeySetup(true);
+
     } catch (error) {
       console.error(
         'LOGIN FAILED:',
@@ -357,15 +420,11 @@ export default function Login() {
           return;
         }
 
-        setShowPasskeySetup(
-          false
-        );
+        // --------------------------------------------------------------------
+        // Registration succeeded.
+        // --------------------------------------------------------------------
 
-        /*
-         * Employee       → /home
-         * Admin          → /admin
-         * Super Admin    → /admin
-         */
+        setShowPasskeySetup(false);
 
         navigate(
           getDashboardRoute(role),
@@ -373,6 +432,7 @@ export default function Login() {
             replace: true,
           }
         );
+
       } catch (error) {
         console.error(
           'PASSKEY SETUP ERROR:',
@@ -392,9 +452,7 @@ export default function Login() {
           );
         }
       } finally {
-        setIsSettingUpPasskey(
-          false
-        );
+        setIsSettingUpPasskey(false);
       }
     };
 
@@ -410,17 +468,9 @@ export default function Login() {
         return;
       }
 
-      setShowPasskeySetup(
-        false
-      );
+      setShowPasskeySetup(false);
 
       setError('');
-
-      /*
-       * Employee       → /home
-       * Admin          → /admin
-       * Super Admin    → /admin
-       */
 
       navigate(
         getDashboardRoute(role),
@@ -560,10 +610,6 @@ export default function Login() {
               className="h-14 w-full rounded-2xl bg-white pl-4 pr-14 text-[15px] text-black outline-none ring-brand-green/40 placeholder:text-black/35 focus:ring-2 disabled:opacity-60"
             />
 
-            {/* ------------------------------------------------------------ */}
-            {/* Standalone Passkey Button */}
-            {/* ------------------------------------------------------------ */}
-
             <PasskeyLoginButton
               identifier={idNumber}
               disabled={
@@ -601,10 +647,11 @@ export default function Login() {
         >
 
           <span
-            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${keepLoggedIn
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
+              keepLoggedIn
                 ? 'border-brand-green bg-brand-green'
                 : 'border-black/25 bg-transparent'
-              }`}
+            }`}
           >
 
             {keepLoggedIn && (
@@ -644,10 +691,6 @@ export default function Login() {
 
         <div className="mt-auto pb-1 pt-8">
 
-          {/* ============================================================ */}
-          {/* Password Login */}
-          {/* ============================================================ */}
-
           <button
             type="submit"
             disabled={
@@ -660,10 +703,6 @@ export default function Login() {
               ? 'Logging In...'
               : 'Log In'}
           </button>
-
-          {/* ============================================================ */}
-          {/* Forgot Password */}
-          {/* ============================================================ */}
 
           <button
             type="button"
@@ -680,134 +719,169 @@ export default function Login() {
       </form>
 
       {/* ================================================================== */}
-      {/* PASSKEY SETUP BOTTOM SHEET */}
+      {/* PASSKEY SETUP MOBILE-SIZED OVERLAY */}
       {/* ================================================================== */}
 
       {showPasskeySetup && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/40 backdrop-blur-[2px]"
+          className="
+            fixed
+            inset-0
+            z-50
+            flex
+            items-end
+            justify-center
+            pointer-events-auto
+          "
           role="presentation"
         >
 
           {/* ================================================================ */}
-          {/* Bottom Sheet */}
+          {/* MOBILE-SIZED APP OVERLAY */}
           {/* ================================================================ */}
 
           <div
-            className="w-full animate-[passkeySheetUp_280ms_ease-out] rounded-t-[30px] bg-white px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-3 shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="passkey-setup-title"
+            className="
+              relative
+              flex
+              h-[min(100dvh,844px)]
+              w-[min(100%,420px)]
+              flex-col
+              justify-end
+              overflow-hidden
+              bg-black/40
+              backdrop-blur-[2px]
+            "
           >
 
             {/* ============================================================ */}
-            {/* Small Handle + Close */}
+            {/* Bottom Sheet */}
             {/* ============================================================ */}
 
-            <div className="relative flex h-9 items-center justify-center">
+            <div
+              className="
+                w-full
+                animate-[passkeySheetUp_280ms_ease-out]
+                rounded-t-[30px]
+                bg-white
+                px-5
+                pb-[calc(20px+env(safe-area-inset-bottom))]
+                pt-3
+                shadow-2xl
+              "
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="passkey-setup-title"
+            >
 
-              <span className="h-1 w-10 rounded-full bg-black/15" />
+              {/* ======================================================== */}
+              {/* Handle + Close */}
+              {/* ======================================================== */}
+
+              <div className="relative flex h-9 items-center justify-center">
+
+                <span className="h-1 w-10 rounded-full bg-black/15" />
+
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={
+                    handleMaybeLater
+                  }
+                  disabled={
+                    isSettingUpPasskey
+                  }
+                  className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center rounded-full text-black/45 active:bg-black/5 disabled:opacity-40"
+                >
+                  <X size={19} />
+                </button>
+
+              </div>
+
+              {/* ======================================================== */}
+              {/* Icon */}
+              {/* ======================================================== */}
+
+              <div className="mt-1 flex justify-center">
+
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green/10">
+
+                  <Fingerprint
+                    size={30}
+                    strokeWidth={1.9}
+                    className="text-brand-green"
+                  />
+
+                </div>
+
+              </div>
+
+              {/* ======================================================== */}
+              {/* Title */}
+              {/* ======================================================== */}
+
+              <h2
+                id="passkey-setup-title"
+                className="mt-3 text-center text-[20px] font-bold tracking-tight text-black"
+              >
+                Set Up Passkey
+              </h2>
+
+              {/* ======================================================== */}
+              {/* Description */}
+              {/* ======================================================== */}
+
+              <p className="mt-1.5 text-center text-[13px] leading-5 text-black/50">
+                Use your device security
+                for faster sign-in.
+              </p>
+
+              {/* ======================================================== */}
+              {/* Set Up Button */}
+              {/* ======================================================== */}
 
               <button
                 type="button"
-                aria-label="Close"
+                onClick={
+                  handleSetupPasskey
+                }
+                disabled={
+                  isSettingUpPasskey
+                }
+                className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-green-800/70 text-[15px] font-bold text-white shadow-sm active:scale-[0.99] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+
+                <Fingerprint
+                  size={20}
+                  strokeWidth={2.2}
+                />
+
+                <span>
+                  {isSettingUpPasskey
+                    ? 'Setting Up...'
+                    : 'Set Up Passkey'}
+                </span>
+
+              </button>
+
+              {/* ======================================================== */}
+              {/* Maybe Later */}
+              {/* ======================================================== */}
+
+              <button
+                type="button"
                 onClick={
                   handleMaybeLater
                 }
                 disabled={
                   isSettingUpPasskey
                 }
-                className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center rounded-full text-black/45 active:bg-black/5 disabled:opacity-40"
+                className="mt-1 flex h-10 w-full items-center justify-center text-[13px] font-semibold text-brand-green active:opacity-60 disabled:opacity-40"
               >
-                <X
-                  size={19}
-                />
+                Maybe Later
               </button>
 
             </div>
-
-            {/* ============================================================ */}
-            {/* Icon */}
-            {/* ============================================================ */}
-
-            <div className="mt-1 flex justify-center">
-
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green/10">
-
-                <Fingerprint
-                  size={30}
-                  strokeWidth={1.9}
-                  className="text-brand-green"
-                />
-
-              </div>
-
-            </div>
-
-            {/* ============================================================ */}
-            {/* Title */}
-            {/* ============================================================ */}
-
-            <h2
-              id="passkey-setup-title"
-              className="mt-3 text-center text-[20px] font-bold tracking-tight text-black"
-            >
-              Set Up Passkey
-            </h2>
-
-            {/* ============================================================ */}
-            {/* Short Description */}
-            {/* ============================================================ */}
-
-            <p className="mt-1.5 text-center text-[13px] leading-5 text-black/50">
-              Use your device security
-              for faster sign-in.
-            </p>
-
-            {/* ============================================================ */}
-            {/* Set Up Button */}
-            {/* ============================================================ */}
-
-            <button
-              type="button"
-              onClick={
-                handleSetupPasskey
-              }
-              disabled={
-                isSettingUpPasskey
-              }
-              className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-green-800/70 text-[15px] font-bold text-white shadow-sm active:scale-[0.99] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-
-              <Fingerprint
-                size={20}
-                strokeWidth={2.2}
-              />
-
-              <span>
-                {isSettingUpPasskey
-                  ? 'Setting Up...'
-                  : 'Set Up Passkey'}
-              </span>
-
-            </button>
-
-            {/* ============================================================ */}
-            {/* Maybe Later */}
-            {/* ============================================================ */}
-
-            <button
-              type="button"
-              onClick={
-                handleMaybeLater
-              }
-              disabled={
-                isSettingUpPasskey
-              }
-              className="mt-1 flex h-10 w-full items-center justify-center text-[13px] font-semibold text-brand-green active:opacity-60 disabled:opacity-40"
-            >
-              Maybe Later
-            </button>
 
           </div>
 

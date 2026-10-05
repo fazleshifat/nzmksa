@@ -89,32 +89,11 @@ export interface PasskeyLoginResponse {
 
   token: string;
 
-  /**
-   * Exact application role.
-   *
-   * Employee:
-   *   user
-   *
-   * Admin:
-   *   admin
-   *
-   * Super Admin:
-   *   superadmin
-   */
   role:
   | "user"
   | "admin"
   | "superadmin";
 
-  /**
-   * Account category.
-   *
-   * Employee:
-   *   employee
-   *
-   * Admin / Super Admin:
-   *   admin
-   */
   accountType:
   | "employee"
   | "admin";
@@ -347,13 +326,6 @@ const serializeAuthenticationCredential = (
    INITIALIZE PASSKEY
 ============================================================ */
 
-/**
- * Browser:
- *   Uses normal browser WebAuthn.
- *
- * Android:
- *   Uses Capgo native WebAuthn shim.
- */
 export const initializePasskey =
   async (): Promise<boolean> => {
     try {
@@ -368,10 +340,6 @@ export const initializePasskey =
 
         console.log(
           "PASSKEY: Native WebAuthn shim initialized"
-        );
-      } else {
-        console.log(
-          "PASSKEY: Browser detected - using native browser WebAuthn"
         );
       }
 
@@ -421,146 +389,126 @@ export const isPasskeySupported =
    REGISTER PASSKEY
 ============================================================ */
 
-/**
- * Works for:
- *
- * - Employee
- * - Admin
- * - Super Admin
- *
- * The backend identifies the account
- * from the currently authenticated JWT.
- */
 export const registerPasskey =
   async (): Promise<{
     verified: boolean;
-
     message: string;
-
     accountType?:
     | "employee"
     | "admin";
-
     role?:
     | "user"
     | "admin"
     | "superadmin";
   }> => {
-    /*
-     * IMPORTANT:
-     * Initialize the native Capacitor WebAuthn bridge
-     * before navigator.credentials.create() on Android.
-     */
-    console.log(
-      "PASSKEY: Initializing before registration"
-    );
+    try {
+      console.log(
+        "PASSKEY: Requesting registration options"
+      );
 
-    const initialized =
-      await initializePasskey();
+      const options =
+        await apiFetch<PasskeyRegistrationOptions>(
+          "/api/auth/passkey/register/options",
+          {
+            method: "POST",
+          }
+        );
 
-    if (!initialized) {
+      console.log(
+        "PASSKEY: Registration options received"
+      );
+
+      const publicKeyOptions =
+        prepareRegistrationOptions(
+          options
+        );
+
+      console.log(
+        "PASSKEY: Calling navigator.credentials.create"
+      );
+
+      const credential =
+        await navigator.credentials.create({
+          publicKey:
+            publicKeyOptions,
+        });
+
+      console.log(
+        "PASSKEY: navigator.credentials.create finished",
+        credential
+      );
+
+      if (!credential) {
+        throw new Error(
+          "Passkey registration was cancelled."
+        );
+      }
+
+      const serializedCredential =
+        serializeRegistrationCredential(
+          credential as PublicKeyCredential
+        );
+
+      console.log(
+        "PASSKEY: Sending credential to backend"
+      );
+
+      const response =
+        await apiFetch<{
+          verified: boolean;
+          message: string;
+          accountType?:
+          | "employee"
+          | "admin";
+          role?:
+          | "user"
+          | "admin"
+          | "superadmin";
+        }>(
+          "/api/auth/passkey/register/verify",
+          {
+            method: "POST",
+            body: JSON.stringify(
+              serializedCredential
+            ),
+          }
+        );
+
+      console.log(
+        "PASSKEY: Registration verification response",
+        response
+      );
+
+      if (!response.verified) {
+        throw new Error(
+          response.message ||
+          "Passkey registration failed."
+        );
+      }
+
+      return response;
+    } catch (error) {
+      console.error(
+        "PASSKEY REGISTRATION ERROR:",
+        error
+      );
+
+      if (
+        error instanceof Error
+      ) {
+        throw error;
+      }
+
       throw new Error(
-        "Passkey support could not be initialized."
+        "Passkey registration failed."
       );
     }
-
-    console.log(
-      "PASSKEY: Requesting registration options"
-    );
-
-    const options =
-      await apiFetch<PasskeyRegistrationOptions>(
-        "/api/auth/passkey/register/options",
-        {
-          method: "POST",
-        }
-      );
-
-    console.log(
-      "PASSKEY: Registration options received"
-    );
-
-    const publicKeyOptions =
-      prepareRegistrationOptions(
-        options
-      );
-
-    console.log(
-      "PASSKEY: Calling navigator.credentials.create"
-    );
-
-    const credential =
-      await navigator.credentials.create({
-        publicKey:
-          publicKeyOptions,
-      });
-
-    console.log(
-      "PASSKEY: navigator.credentials.create finished",
-      credential
-    );
-
-    if (!credential) {
-      throw new Error(
-        "Passkey registration was cancelled."
-      );
-    }
-
-    console.log(
-      "PASSKEY: Sending credential to backend"
-    );
-
-    const response =
-      await apiFetch<{
-        verified: boolean;
-
-        message: string;
-
-        accountType?:
-        | "employee"
-        | "admin";
-
-        role?:
-        | "user"
-        | "admin"
-        | "superadmin";
-      }>(
-        "/api/auth/passkey/register/verify",
-        {
-          method: "POST",
-
-          body: JSON.stringify(
-            serializeRegistrationCredential(
-              credential as PublicKeyCredential
-            )
-          ),
-        }
-      );
-
-    console.log(
-      "PASSKEY: Registration verification response",
-      response
-    );
-
-    return response;
   };
 
 /* ============================================================
    LOGIN WITH PASSKEY
 ============================================================ */
 
-/**
- * Generic passkey login.
- *
- * Employee:
- *   identifier = Resident ID
- *
- * Admin:
- *   identifier = Email
- *
- * Super Admin:
- *   identifier = Email
- */
 export const loginWithPasskey =
   async (
     identifier: string
@@ -571,24 +519,6 @@ export const loginWithPasskey =
     if (!cleanIdentifier) {
       throw new Error(
         "Username, Resident ID number, or email is required."
-      );
-    }
-
-    /*
-     * IMPORTANT:
-     * Initialize the native Capacitor WebAuthn bridge
-     * before navigator.credentials.get() on Android.
-     */
-    console.log(
-      "PASSKEY: Initializing before authentication"
-    );
-
-    const initialized =
-      await initializePasskey();
-
-    if (!initialized) {
-      throw new Error(
-        "Passkey support could not be initialized."
       );
     }
 
@@ -673,10 +603,6 @@ export const loginWithPasskey =
    PASSKEY STATUS
 ============================================================ */
 
-/**
- * Checks whether the currently authenticated
- * account has a registered passkey.
- */
 export const getPasskeyStatus =
   async (): Promise<{
     hasPasskey: boolean;

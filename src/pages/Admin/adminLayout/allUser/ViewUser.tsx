@@ -9,6 +9,17 @@ interface UserResponse {
     user: Employee;
 }
 
+interface UserPasskey {
+    credentialId?: string;
+    publicKey?: unknown;
+    counter?: number;
+    transports?: string[];
+    deviceType?: string;
+    backedUp?: boolean;
+}
+
+const PASSKEYS_PER_PAGE = 3;
+
 export default function ViewUser() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -16,6 +27,24 @@ export default function ViewUser() {
     const [user, setUser] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    const [passkeyPage, setPasskeyPage] = useState(1);
+
+    const [showDeletePasskeyModal, setShowDeletePasskeyModal] =
+        useState(false);
+
+    const [selectedPasskey, setSelectedPasskey] =
+        useState<UserPasskey | null>(null);
+
+    const [deletingPasskey, setDeletingPasskey] =
+        useState(false);
+
+    const [passkeyDeleteError, setPasskeyDeleteError] =
+        useState('');
+
+    // =========================================================================
+    // LOAD USER
+    // =========================================================================
 
     useEffect(() => {
         if (!id) {
@@ -34,6 +63,7 @@ export default function ViewUser() {
                 );
 
                 setUser(response.user);
+                setPasskeyPage(1);
             } catch (error) {
                 console.error(
                     'Admin: Failed to load user:',
@@ -52,6 +82,189 @@ export default function ViewUser() {
 
         loadUser();
     }, [id]);
+
+    // =========================================================================
+    // PASSKEY DATA
+    // =========================================================================
+
+    const passkeys: UserPasskey[] =
+        user &&
+            Array.isArray(
+                (user as Employee & {
+                    passkeys?: unknown;
+                }).passkeys
+            )
+            ? (
+                (user as Employee & {
+                    passkeys?: unknown[];
+                }).passkeys as UserPasskey[]
+            )
+            : [];
+
+    const totalPasskeys = passkeys.length;
+
+    const totalPasskeyPages = Math.max(
+        1,
+        Math.ceil(
+            totalPasskeys / PASSKEYS_PER_PAGE
+        )
+    );
+
+    const safePasskeyPage = Math.min(
+        passkeyPage,
+        totalPasskeyPages
+    );
+
+    const visiblePasskeys = passkeys.slice(
+        (safePasskeyPage - 1) * PASSKEYS_PER_PAGE,
+        safePasskeyPage * PASSKEYS_PER_PAGE
+    );
+
+    // =========================================================================
+    // KEEP PASSKEY PAGE VALID
+    // =========================================================================
+
+    useEffect(() => {
+        if (passkeyPage > totalPasskeyPages) {
+            setPasskeyPage(totalPasskeyPages);
+        }
+    }, [
+        passkeyPage,
+        totalPasskeyPages,
+    ]);
+
+    // =========================================================================
+    // OPEN DELETE MODAL
+    // =========================================================================
+
+    const openDeletePasskeyModal = (
+        passkey: UserPasskey
+    ) => {
+        if (!passkey.credentialId) {
+            setPasskeyDeleteError(
+                'Passkey credential ID is missing.'
+            );
+            return;
+        }
+
+        setSelectedPasskey(passkey);
+        setPasskeyDeleteError('');
+        setShowDeletePasskeyModal(true);
+    };
+
+    // =========================================================================
+    // CLOSE DELETE MODAL
+    // =========================================================================
+
+    const closeDeletePasskeyModal = () => {
+        if (deletingPasskey) return;
+
+        setShowDeletePasskeyModal(false);
+        setSelectedPasskey(null);
+        setPasskeyDeleteError('');
+    };
+
+    // =========================================================================
+    // DELETE INDIVIDUAL PASSKEY
+    // =========================================================================
+
+    const handleDeletePasskey = async () => {
+        if (!id || !selectedPasskey?.credentialId) {
+            setPasskeyDeleteError(
+                'Passkey credential ID is missing.'
+            );
+            return;
+        }
+
+        try {
+            setDeletingPasskey(true);
+            setPasskeyDeleteError('');
+
+            const credentialId =
+                selectedPasskey.credentialId;
+
+            // -------------------------------------------------------------
+            // DELETE ONLY SELECTED PASSKEY
+            // -------------------------------------------------------------
+
+            await apiFetch(
+                `/api/admin/all-admins/users/${id}/passkey/${encodeURIComponent(
+                    credentialId
+                )}?accountType=employee`,
+                {
+                    method: 'DELETE',
+                }
+            );
+
+            // -------------------------------------------------------------
+            // GET UPDATED USER DATA
+            // -------------------------------------------------------------
+
+            const response =
+                await apiFetch<UserResponse>(
+                    `/api/admin/users/${id}`
+                );
+
+            setUser(response.user);
+
+            // -------------------------------------------------------------
+            // CALCULATE UPDATED PAGINATION
+            // -------------------------------------------------------------
+
+            const updatedPasskeys: UserPasskey[] =
+                Array.isArray(
+                    (
+                        response.user as Employee & {
+                            passkeys?: unknown;
+                        }
+                    ).passkeys
+                )
+                    ? (
+                        (
+                            response.user as Employee & {
+                                passkeys?: unknown[];
+                            }
+                        ).passkeys as UserPasskey[]
+                    )
+                    : [];
+
+            const updatedTotalPages = Math.max(
+                1,
+                Math.ceil(
+                    updatedPasskeys.length /
+                    PASSKEYS_PER_PAGE
+                )
+            );
+
+            setPasskeyPage((currentPage) =>
+                Math.min(
+                    currentPage,
+                    updatedTotalPages
+                )
+            );
+
+            // -------------------------------------------------------------
+            // CLOSE MODAL
+            // -------------------------------------------------------------
+
+            setShowDeletePasskeyModal(false);
+            setSelectedPasskey(null);
+            setPasskeyDeleteError('');
+        } catch (error) {
+            console.error(
+                'Admin: Failed to delete passkey:',
+                error
+            );
+
+            setPasskeyDeleteError(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to delete passkey'
+            );
+        } finally {
+            setDeletingPasskey(false);
+        }
+    };
 
     // =========================================================================
     // LOADING
@@ -100,12 +313,15 @@ export default function ViewUser() {
                     </h1>
 
                     <p className="mt-2 text-sm leading-6 text-black/40">
-                        {error || 'Unable to load this employee.'}
+                        {error ||
+                            'Unable to load this employee.'}
                     </p>
 
                     <button
                         type="button"
-                        onClick={() => navigate('/admin')}
+                        onClick={() =>
+                            navigate('/admin')
+                        }
                         className="mt-6 rounded-xl bg-brand-green px-5 py-3 text-sm font-bold text-white transition hover:brightness-95"
                     >
                         Back to Dashboard
@@ -139,6 +355,7 @@ export default function ViewUser() {
 
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2">
+
                                     <span className="hidden text-[10px] font-black uppercase tracking-[0.18em] text-brand-green sm:block">
                                         Administration
                                     </span>
@@ -148,18 +365,23 @@ export default function ViewUser() {
                                     <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-black/30">
                                         Employee Profile
                                     </span>
+
                                 </div>
 
                                 <h1 className="mt-0.5 truncate text-base font-black tracking-tight sm:text-lg">
-                                    {user.name || 'Unnamed Employee'}
+                                    {user.name ||
+                                        'Unnamed Employee'}
                                 </h1>
                             </div>
+
                         </div>
 
                         <button
                             type="button"
                             onClick={() =>
-                                navigate(`/admin/users/${id}/edit`)
+                                navigate(
+                                    `/admin/users/${id}/edit`
+                                )
                             }
                             className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-green px-3.5 py-2.5 text-xs font-black text-white shadow-[0_5px_18px_rgba(25,118,83,0.18)] transition hover:brightness-95 active:scale-[0.98] sm:px-5 sm:py-3 sm:text-sm"
                         >
@@ -182,8 +404,6 @@ export default function ViewUser() {
 
                     <section className="relative overflow-hidden rounded-[28px] bg-white shadow-[0_12px_45px_rgba(0,0,0,0.055)] ring-1 ring-black/[0.035]">
 
-                        {/* Decorative top area */}
-
                         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-[#DFF1E8] via-[#EEF7F3] to-white" />
 
                         <div className="relative">
@@ -196,13 +416,13 @@ export default function ViewUser() {
 
                                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
 
-                                    {/* Small Profile Image */}
-
                                     <div className="relative shrink-0">
 
                                         {user.avatarUrl ? (
                                             <img
-                                                src={user.avatarUrl}
+                                                src={
+                                                    user.avatarUrl
+                                                }
                                                 alt={
                                                     user.name ||
                                                     'Employee'
@@ -212,7 +432,8 @@ export default function ViewUser() {
                                         ) : (
                                             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#DDEFE7] text-3xl font-black text-brand-green ring-4 ring-white sm:h-[88px] sm:w-[88px]">
                                                 {String(
-                                                    user.name || 'U'
+                                                    user.name ||
+                                                    'U'
                                                 )
                                                     .trim()
                                                     .charAt(0)
@@ -222,14 +443,12 @@ export default function ViewUser() {
 
                                         <span
                                             className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-white ${user.active === false
-                                                ? 'bg-red-500'
-                                                : 'bg-emerald-500'
+                                                    ? 'bg-red-500'
+                                                    : 'bg-emerald-500'
                                                 }`}
                                         />
 
                                     </div>
-
-                                    {/* Employee information */}
 
                                     <div className="min-w-0 flex-1">
 
@@ -242,14 +461,14 @@ export default function ViewUser() {
 
                                             <span
                                                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${user.active === false
-                                                    ? 'bg-red-50 text-red-600'
-                                                    : 'bg-emerald-50 text-emerald-700'
+                                                        ? 'bg-red-50 text-red-600'
+                                                        : 'bg-emerald-50 text-emerald-700'
                                                     }`}
                                             >
                                                 <span
                                                     className={`h-1.5 w-1.5 rounded-full ${user.active === false
-                                                        ? 'bg-red-500'
-                                                        : 'bg-emerald-500'
+                                                            ? 'bg-red-500'
+                                                            : 'bg-emerald-500'
                                                         }`}
                                                 />
 
@@ -306,7 +525,7 @@ export default function ViewUser() {
                             </div>
 
                             {/* ========================================================= */}
-                            {/* DOCUMENTS — TOP OF PAGE */}
+                            {/* DOCUMENTS */}
                             {/* ========================================================= */}
 
                             <div className="px-5 py-6 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
@@ -329,17 +548,11 @@ export default function ViewUser() {
 
                                 </div>
 
-                                {/* ===================================================== */}
-                                {/* DOCUMENT GRID */}
-                                {/* ===================================================== */}
-
                                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
 
-                                    {/* ------------------------------------------------- */}
                                     {/* PROFILE PHOTO */}
-                                    {/* ------------------------------------------------- */}
 
-                                    <div className="rounded-2xl border border-black/[0.055] bg-[#FAFBFA] h-fit p-4">
+                                    <div className="h-fit rounded-2xl border border-black/[0.055] bg-[#FAFBFA] p-4">
 
                                         <div className="mb-4 flex items-center justify-between gap-2">
 
@@ -361,14 +574,17 @@ export default function ViewUser() {
 
                                             {user.avatarUrl ? (
                                                 <img
-                                                    src={user?.avatarUrl}
+                                                    src={
+                                                        user.avatarUrl
+                                                    }
                                                     alt="Employee profile"
                                                     className="h-30 w-30 rounded-2xl object-cover shadow-[0_8px_25px_rgba(0,0,0,0.08)]"
                                                 />
                                             ) : (
                                                 <div className="flex h-40 w-40 items-center justify-center rounded-2xl bg-[#E2F0E9] text-5xl font-black text-brand-green">
                                                     {String(
-                                                        user.name || 'U'
+                                                        user.name ||
+                                                        'U'
                                                     )
                                                         .trim()
                                                         .charAt(0)
@@ -380,9 +596,7 @@ export default function ViewUser() {
 
                                     </div>
 
-                                    {/* ------------------------------------------------- */}
                                     {/* IQAMA */}
-                                    {/* ------------------------------------------------- */}
 
                                     <div className="rounded-2xl border border-black/[0.055] bg-white p-4 sm:p-5">
 
@@ -410,9 +624,11 @@ export default function ViewUser() {
                                             <div className="flex w-full items-center justify-center overflow-hidden">
 
                                                 <img
-                                                    src={user.iqamaImage}
+                                                    src={
+                                                        user.iqamaImage
+                                                    }
                                                     alt="Iqama / Resident ID"
-                                                    className="block h-auto w-auto max-h-[420px] max-w-full object-contain sm:max-h-[500px] lg:max-h-[300px] rounded-2xl"
+                                                    className="block h-auto w-auto max-h-[420px] max-w-full rounded-2xl object-contain sm:max-h-[500px] lg:max-h-[300px]"
                                                 />
 
                                             </div>
@@ -446,7 +662,7 @@ export default function ViewUser() {
                     {/* CONTENT */}
                     {/* ================================================================= */}
 
-                    <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+                    <div className="mt-6 grid grid-cols-1 items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
 
                         {/* ============================================================= */}
                         {/* LEFT */}
@@ -631,7 +847,9 @@ export default function ViewUser() {
                                     icon={<ShieldIcon />}
                                 >
                                     <ObjectInfo
-                                        value={user.healthInsurance}
+                                        value={
+                                            user.healthInsurance
+                                        }
                                     />
                                 </InfoSection>
                             )}
@@ -642,11 +860,11 @@ export default function ViewUser() {
                         {/* RIGHT */}
                         {/* ============================================================= */}
 
-                        <aside className="min-w-0 space-y-5">
+                        <aside className="flex h-full min-w-0 flex-col gap-5">
 
                             {/* ACCOUNT STATUS */}
 
-                            <section className="rounded-3xl bg-white p-5 shadow-[0_8px_35px_rgba(0,0,0,0.045)] ring-1 ring-black/[0.03] sm:p-6">
+                            <section className="shrink-0 rounded-3xl bg-white p-5 shadow-[0_8px_35px_rgba(0,0,0,0.045)] ring-1 ring-black/[0.03] sm:p-6">
 
                                 <SectionHeading
                                     eyebrow="Account"
@@ -721,14 +939,486 @@ export default function ViewUser() {
 
                             </section>
 
+                            {/* ========================================================= */}
+                            {/* PASSKEYS */}
+                            {/* ========================================================= */}
+
+                            <section className="flex h-fit flex-col overflow-hidden rounded-3xl bg-white p-5 shadow-[0_8px_35px_rgba(0,0,0,0.045)] ring-1 ring-black/[0.03] sm:p-6">
+
+                                {/* PASSKEY HEADER */}
+
+                                <div className="flex items-start justify-between gap-3">
+
+                                    <SectionHeading
+                                        eyebrow="Security"
+                                        title="Passkeys"
+                                        icon={<KeyIcon />}
+                                    />
+
+                                    <span
+                                        className={`shrink-0 rounded-full px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide ${totalPasskeys > 0
+                                                ? 'bg-emerald-50 text-emerald-700'
+                                                : 'bg-black/[0.04] text-black/35'
+                                            }`}
+                                    >
+                                        {totalPasskeys > 0
+                                            ? `${totalPasskeys} ${totalPasskeys === 1
+                                                ? 'Passkey'
+                                                : 'Passkeys'
+                                            }`
+                                            : 'Not added'}
+                                    </span>
+
+                                </div>
+
+                                {/* NO PASSKEY */}
+
+                                {totalPasskeys === 0 ? (
+                                    <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+
+                                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F4F7F5] text-black/25">
+                                            <KeyIcon />
+                                        </div>
+
+                                        <p className="mt-4 text-sm font-black text-black/55">
+                                            Passkey not added yet
+                                        </p>
+
+                                        <p className="mt-1.5 max-w-[230px] text-[11px] leading-5 text-black/35">
+                                            This employee has not registered any passkey for this account.
+                                        </p>
+
+                                    </div>
+                                ) : (
+                                    <>
+
+                                        {/* PASSKEY LIST */}
+
+                                        <div className="mt-5 min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
+
+                                            {visiblePasskeys.map(
+                                                (
+                                                    passkey,
+                                                    index
+                                                ) => (
+                                                    <PasskeyCard
+                                                        key={
+                                                            passkey.credentialId ||
+                                                            index
+                                                        }
+                                                        passkey={
+                                                            passkey
+                                                        }
+                                                        index={
+                                                            (safePasskeyPage -
+                                                                1) *
+                                                            PASSKEYS_PER_PAGE +
+                                                            index
+                                                        }
+                                                        onDelete={() =>
+                                                            openDeletePasskeyModal(
+                                                                passkey
+                                                            )
+                                                        }
+                                                    />
+                                                )
+                                            )}
+
+                                        </div>
+
+                                        {/* PAGINATION */}
+
+                                        <div className="mt-5 flex shrink-0 items-center justify-between border-t border-black/[0.055] pt-4">
+
+                                            <p className="text-[10px] font-bold text-black/35">
+                                                Page{' '}
+                                                <span className="font-black text-black/55">
+                                                    {safePasskeyPage}
+                                                </span>{' '}
+                                                of{' '}
+                                                <span className="font-black text-black/55">
+                                                    {totalPasskeyPages}
+                                                </span>
+                                            </p>
+
+                                            <div className="flex items-center gap-1.5">
+
+                                                <button
+                                                    type="button"
+                                                    disabled={
+                                                        safePasskeyPage ===
+                                                        1
+                                                    }
+                                                    onClick={() =>
+                                                        setPasskeyPage(
+                                                            (
+                                                                page
+                                                            ) =>
+                                                                Math.max(
+                                                                    1,
+                                                                    page -
+                                                                    1
+                                                                )
+                                                        )
+                                                    }
+                                                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-black/45 transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    aria-label="Previous page"
+                                                >
+                                                    <ChevronLeftIcon />
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    disabled={
+                                                        safePasskeyPage ===
+                                                        totalPasskeyPages
+                                                    }
+                                                    onClick={() =>
+                                                        setPasskeyPage(
+                                                            (
+                                                                page
+                                                            ) =>
+                                                                Math.min(
+                                                                    totalPasskeyPages,
+                                                                    page +
+                                                                    1
+                                                                )
+                                                        )
+                                                    }
+                                                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-black/45 transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30"
+                                                    aria-label="Next page"
+                                                >
+                                                    <ChevronRightIcon />
+                                                </button>
+
+                                            </div>
+
+                                        </div>
+
+                                    </>
+                                )}
+
+                            </section>
+
                         </aside>
 
                     </div>
 
                 </main>
             </div>
+
+            {/* ================================================================= */}
+            {/* DELETE PASSKEY MODAL */}
+            {/* ================================================================= */}
+
+            {showDeletePasskeyModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/35 px-4 backdrop-blur-[2px]">
+
+                    <div className="w-full max-w-[350px] rounded-3xl bg-white p-5 shadow-[0_20px_70px_rgba(0,0,0,0.18)]">
+
+                        <h3 className="text-base font-black text-black">
+                            Delete passkey?
+                        </h3>
+
+                        <p className="mt-1.5 text-[11px] font-medium leading-5 text-black/40">
+                            This passkey will be removed from this account.
+                        </p>
+
+                        {passkeyDeleteError && (
+                            <p className="mt-2 text-[11px] font-semibold text-red-500">
+                                {passkeyDeleteError}
+                            </p>
+                        )}
+
+                        <div className="mt-5 flex items-center gap-2">
+
+                            {/* LEFT = DELETE */}
+
+                            <button
+                                type="button"
+                                disabled={deletingPasskey}
+                                onClick={
+                                    handleDeletePasskey
+                                }
+                                className="flex-1 rounded-xl bg-red-500 px-4 py-2.5 text-[11px] font-black text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {deletingPasskey
+                                    ? 'Deleting...'
+                                    : 'Delete'}
+                            </button>
+
+                            {/* RIGHT = CANCEL */}
+
+                            <button
+                                type="button"
+                                disabled={deletingPasskey}
+                                onClick={
+                                    closeDeletePasskeyModal
+                                }
+                                className="flex-1 rounded-xl border border-black/[0.08] bg-white px-4 py-2.5 text-[11px] font-black text-black/60 transition hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            )}
+
         </AdminPageLayout>
     );
+}
+
+// ============================================================================
+// PASSKEY CARD
+// ============================================================================
+
+function PasskeyCard({
+    passkey,
+    index,
+    onDelete,
+}: {
+    passkey: UserPasskey;
+    index: number;
+    onDelete: () => void;
+}) {
+    const credentialId =
+        typeof passkey.credentialId === 'string'
+            ? passkey.credentialId
+            : '';
+
+    const deviceType =
+        typeof passkey.deviceType === 'string' &&
+            passkey.deviceType.trim()
+            ? passkey.deviceType
+            : 'Unknown';
+
+    const transports =
+        Array.isArray(passkey.transports)
+            ? passkey.transports
+            : [];
+
+    const counter =
+        typeof passkey.counter === 'number'
+            ? passkey.counter
+            : 0;
+
+    const backedUp =
+        typeof passkey.backedUp === 'boolean'
+            ? passkey.backedUp
+            : false;
+
+    return (
+        <div className="rounded-2xl border border-black/[0.055] bg-[#FAFBFA] p-4">
+
+            {/* CARD HEADER */}
+
+            <div className="flex items-start justify-between gap-3">
+
+                <div className="flex min-w-0 items-center gap-3">
+
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF5F0] text-brand-green">
+                        <KeyIcon />
+                    </div>
+
+                    <div className="min-w-0">
+
+                        <p className="text-xs font-black">
+                            Passkey {index + 1}
+                        </p>
+
+                        <p className="mt-0.5 text-[10px] font-medium text-black/35">
+                            WebAuthn credential
+                        </p>
+
+                    </div>
+
+                </div>
+
+                {/* DELETE ICON */}
+
+                <button
+                    type="button"
+                    onClick={onDelete}
+                    disabled={!credentialId}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white transition hover:bg-red-500 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                    aria-label={`Delete Passkey ${index + 1
+                        }`}
+                    title="Delete passkey"
+                >
+                    <TrashIcon />
+                </button>
+
+            </div>
+
+            {/* DETAILS */}
+
+            <div className="mt-4 grid grid-cols-1 gap-2">
+
+                <PasskeyDetail
+                    label="Device Type"
+                    value={formatPasskeyDeviceType(
+                        deviceType
+                    )}
+                />
+
+                <PasskeyDetail
+                    label="Backed Up"
+                    value={
+                        backedUp
+                            ? 'Yes'
+                            : 'No'
+                    }
+                    positive={backedUp}
+                />
+
+                <PasskeyDetail
+                    label="Transports"
+                    value={
+                        transports.length > 0
+                            ? transports
+                                .map(formatTransport)
+                                .join(', ')
+                            : 'Not available'
+                    }
+                />
+
+                <PasskeyDetail
+                    label="Counter"
+                    value={String(counter)}
+                    mono
+                />
+
+                <PasskeyDetail
+                    label="Credential ID"
+                    value={
+                        credentialId
+                            ? shortenCredentialId(
+                                credentialId
+                            )
+                            : 'Not available'
+                    }
+                    mono
+                    title={
+                        credentialId ||
+                        undefined
+                    }
+                />
+
+            </div>
+
+        </div>
+    );
+}
+
+// ============================================================================
+// PASSKEY DETAIL
+// ============================================================================
+
+function PasskeyDetail({
+    label,
+    value,
+    positive,
+    mono,
+    title,
+}: {
+    label: string;
+    value: string;
+    positive?: boolean;
+    mono?: boolean;
+    title?: string;
+}) {
+    return (
+        <div
+            title={title}
+            className="rounded-xl border border-black/[0.045] bg-white px-3 py-2.5"
+        >
+
+            <p className="text-[8px] font-black uppercase tracking-[0.08em] text-black/30">
+                {label}
+            </p>
+
+            <p
+                className={`mt-1 break-all text-[11px] font-bold ${positive
+                        ? 'text-emerald-600'
+                        : 'text-black/65'
+                    } ${mono
+                        ? 'font-mono'
+                        : ''
+                    }`}
+            >
+                {value}
+            </p>
+
+        </div>
+    );
+}
+
+// ============================================================================
+// PASSKEY FORMATTERS
+// ============================================================================
+
+function formatPasskeyDeviceType(
+    value: string
+): string {
+    switch (value) {
+        case 'singleDevice':
+            return 'Single Device';
+
+        case 'multiDevice':
+            return 'Multi Device';
+
+        default:
+            return value
+                .replace(
+                    /([A-Z])/g,
+                    ' $1'
+                )
+                .replace(
+                    /^./,
+                    (char) =>
+                        char.toUpperCase()
+                );
+    }
+}
+
+function formatTransport(
+    value: string
+): string {
+    switch (value) {
+        case 'internal':
+            return 'Internal';
+
+        case 'hybrid':
+            return 'Hybrid';
+
+        case 'usb':
+            return 'USB';
+
+        case 'nfc':
+            return 'NFC';
+
+        case 'ble':
+            return 'Bluetooth';
+
+        default:
+            return value.toUpperCase();
+    }
+}
+
+function shortenCredentialId(
+    value: string
+): string {
+    if (value.length <= 24) {
+        return value;
+    }
+
+    return `${value.slice(
+        0,
+        10
+    )}...${value.slice(-10)}`;
 }
 
 // ============================================================================
@@ -807,14 +1497,19 @@ function InfoGrid({
     items,
 }: {
     items: Array<
-        [string, unknown] | [string, unknown, boolean]
+        [string, unknown] |
+        [string, unknown, boolean]
     >;
 }) {
     return (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
 
             {items.map((item) => {
-                const [label, value, mono] = item;
+                const [
+                    label,
+                    value,
+                    mono,
+                ] = item;
 
                 return (
                     <div
@@ -828,8 +1523,8 @@ function InfoGrid({
 
                         <p
                             className={`mt-1.5 break-words text-[13px] font-bold text-black/75 ${mono
-                                ? 'font-mono tracking-tight'
-                                : ''
+                                    ? 'font-mono tracking-tight'
+                                    : ''
                                 }`}
                         >
                             {formatValue(value)}
@@ -860,7 +1555,10 @@ function ObjectInfo({
     }
 
     const entries = Object.entries(
-        value as Record<string, unknown>
+        value as Record<
+            string,
+            unknown
+        >
     );
 
     if (!entries.length) {
@@ -874,22 +1572,24 @@ function ObjectInfo({
     return (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
 
-            {entries.map(([key, value]) => (
-                <div
-                    key={key}
-                    className="rounded-2xl border border-black/[0.045] bg-[#F7F9F8] px-4 py-3.5"
-                >
+            {entries.map(
+                ([key, value]) => (
+                    <div
+                        key={key}
+                        className="rounded-2xl border border-black/[0.045] bg-[#F7F9F8] px-4 py-3.5"
+                    >
 
-                    <p className="text-[9px] font-black uppercase tracking-[0.08em] text-black/30">
-                        {formatLabel(key)}
-                    </p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.08em] text-black/30">
+                            {formatLabel(key)}
+                        </p>
 
-                    <p className="mt-1.5 break-words text-[13px] font-bold text-black/75">
-                        {formatValue(value)}
-                    </p>
+                        <p className="mt-1.5 break-words text-[13px] font-bold text-black/75">
+                            {formatValue(value)}
+                        </p>
 
-                </div>
-            ))}
+                    </div>
+                )
+            )}
 
         </div>
     );
@@ -917,15 +1617,15 @@ function StatusRow({
 
             <span
                 className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide ${active
-                    ? 'text-emerald-600'
-                    : 'text-red-500'
+                        ? 'text-emerald-600'
+                        : 'text-red-500'
                     }`}
             >
 
                 <span
                     className={`h-1.5 w-1.5 rounded-full ${active
-                        ? 'bg-emerald-500'
-                        : 'bg-red-500'
+                            ? 'bg-emerald-500'
+                            : 'bg-red-500'
                         }`}
                 />
 
@@ -941,7 +1641,9 @@ function StatusRow({
 // VALUE FORMATTER
 // ============================================================================
 
-function formatValue(value: unknown): string {
+function formatValue(
+    value: unknown
+): string {
     if (
         value === undefined ||
         value === null ||
@@ -951,21 +1653,32 @@ function formatValue(value: unknown): string {
     }
 
     if (value instanceof Date) {
-        return formatDateValue(value);
+        return formatDateValue(
+            value
+        );
     }
 
     if (typeof value === 'string') {
-        const trimmed = value.trim();
+        const trimmed =
+            value.trim();
 
-        if (isDateLike(trimmed)) {
-            return formatDateValue(trimmed);
+        if (
+            isDateLike(trimmed)
+        ) {
+            return formatDateValue(
+                trimmed
+            );
         }
 
         return trimmed;
     }
 
-    if (typeof value === 'object') {
-        return JSON.stringify(value);
+    if (
+        typeof value === 'object'
+    ) {
+        return JSON.stringify(
+            value
+        );
     }
 
     return String(value);
@@ -975,88 +1688,162 @@ function formatValue(value: unknown): string {
 // DATE FORMATTER
 // ============================================================================
 
-function isDateLike(value: string): boolean {
-    // YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss...
-    if (/^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value)) {
+function isDateLike(
+    value: string
+): boolean {
+    if (
+        /^\d{4}-\d{2}-\d{2}(T.*)?$/.test(
+            value
+        )
+    ) {
         return true;
     }
 
-    // DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY
-    if (/^\d{2}[-/.]\d{2}[-/]\d{4}$/.test(value)) {
+    if (
+        /^\d{2}[-/.]\d{2}[-/]\d{4}$/.test(
+            value
+        )
+    ) {
         return true;
     }
 
-    // YYYY/MM/DD or YYYY.MM.DD
-    if (/^\d{4}[/.]\d{2}[/.]\d{2}$/.test(value)) {
+    if (
+        /^\d{4}[/.]\d{2}[/.]\d{2}$/.test(
+            value
+        )
+    ) {
         return true;
     }
 
     return false;
 }
 
-function formatDateValue(value: unknown): string {
-    if (!value) return "—";
+function formatDateValue(
+    value: unknown
+): string {
+    if (!value) return '—';
 
-    const stringValue = String(value).trim();
+    const stringValue =
+        String(value).trim();
 
-    if (!stringValue) return "—";
+    if (!stringValue) {
+        return '—';
+    }
 
     let date: Date;
 
-    // YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) {
-        const [year, month, day] = stringValue.split("-").map(Number);
+    if (
+        /^\d{4}-\d{2}-\d{2}$/.test(
+            stringValue
+        )
+    ) {
+        const [
+            year,
+            month,
+            day,
+        ] = stringValue
+            .split('-')
+            .map(Number);
 
-        // Create local date to avoid timezone shifting
-        date = new Date(year, month - 1, day);
+        date = new Date(
+            year,
+            month - 1,
+            day
+        );
+    } else if (
+        /^\d{2}-\d{2}-\d{4}$/.test(
+            stringValue
+        )
+    ) {
+        const [
+            day,
+            month,
+            year,
+        ] = stringValue
+            .split('-')
+            .map(Number);
+
+        date = new Date(
+            year,
+            month - 1,
+            day
+        );
+    } else if (
+        /^\d{2}\/\d{2}\/\d{4}$/.test(
+            stringValue
+        )
+    ) {
+        const [
+            day,
+            month,
+            year,
+        ] = stringValue
+            .split('/')
+            .map(Number);
+
+        date = new Date(
+            year,
+            month - 1,
+            day
+        );
+    } else if (
+        /^\d{4}\/\d{2}\/\d{2}$/.test(
+            stringValue
+        )
+    ) {
+        const [
+            year,
+            month,
+            day,
+        ] = stringValue
+            .split('/')
+            .map(Number);
+
+        date = new Date(
+            year,
+            month - 1,
+            day
+        );
+    } else {
+        date = new Date(
+            stringValue
+        );
     }
 
-    // DD-MM-YYYY
-    else if (/^\d{2}-\d{2}-\d{4}$/.test(stringValue)) {
-        const [day, month, year] = stringValue.split("-").map(Number);
-
-        date = new Date(year, month - 1, day);
-    }
-
-    // DD/MM/YYYY
-    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(stringValue)) {
-        const [day, month, year] = stringValue.split("/").map(Number);
-
-        date = new Date(year, month - 1, day);
-    }
-
-    // YYYY/MM/DD
-    else if (/^\d{4}\/\d{2}\/\d{2}$/.test(stringValue)) {
-        const [year, month, day] = stringValue.split("/").map(Number);
-
-        date = new Date(year, month - 1, day);
-    }
-
-    // ISO timestamp
-    else {
-        date = new Date(stringValue);
-    }
-
-    if (Number.isNaN(date.getTime())) {
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
         return stringValue;
     }
 
-    return new Intl.DateTimeFormat("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(date);
+    return new Intl.DateTimeFormat(
+        'en-GB',
+        {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        }
+    ).format(date);
 }
 
 // ============================================================================
 // LABEL FORMATTER
 // ============================================================================
 
-function formatLabel(value: string): string {
+function formatLabel(
+    value: string
+): string {
     return value
-        .replace(/([A-Z])/g, ' $1')
-        .replace(/^./, (character) =>
-            character.toUpperCase()
+        .replace(
+            /([A-Z])/g,
+            ' $1'
+        )
+        .replace(
+            /^./,
+            (character) =>
+                character.toUpperCase()
         );
 }
 
@@ -1112,7 +1899,11 @@ function UserIcon() {
             strokeLinecap="round"
             strokeLinejoin="round"
         >
-            <circle cx="12" cy="8" r="4" />
+            <circle
+                cx="12"
+                cy="8"
+                r="4"
+            />
             <path d="M4 21a8 8 0 0 1 16 0" />
         </svg>
     );
@@ -1162,7 +1953,11 @@ function PassportIcon() {
                 y="2"
                 rx="2"
             />
-            <circle cx="12" cy="11" r="3" />
+            <circle
+                cx="12"
+                cy="11"
+                r="3"
+            />
             <path d="M8 17h8" />
             <path d="M9 7h6" />
         </svg>
@@ -1207,6 +2002,85 @@ function ShieldIcon() {
     );
 }
 
+function KeyIcon() {
+    return (
+        <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <circle
+                cx="7.5"
+                cy="15.5"
+                r="3.5"
+            />
+            <path d="m10 13 9-9" />
+            <path d="m15 6 3 3" />
+            <path d="m17 4 3 3" />
+        </svg>
+    );
+}
+
+function TrashIcon() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v5" />
+            <path d="M14 11v5" />
+        </svg>
+    );
+}
+
+function ChevronLeftIcon() {
+    return (
+        <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="m15 18-6-6 6-6" />
+        </svg>
+    );
+}
+
+function ChevronRightIcon() {
+    return (
+        <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="m9 18 6-6-6-6" />
+        </svg>
+    );
+}
+
 function ImageIcon() {
     return (
         <svg
@@ -1226,7 +2100,11 @@ function ImageIcon() {
                 y="3"
                 rx="2"
             />
-            <circle cx="8.5" cy="8.5" r="1.5" />
+            <circle
+                cx="8.5"
+                cy="8.5"
+                r="1.5"
+            />
             <path d="m21 15-5-5L5 21" />
         </svg>
     );
@@ -1251,7 +2129,11 @@ function IdIcon() {
                 y="4"
                 rx="2"
             />
-            <circle cx="8" cy="12" r="2" />
+            <circle
+                cx="8"
+                cy="12"
+                r="2"
+            />
             <path d="M14 9h4" />
             <path d="M14 13h4" />
         </svg>
