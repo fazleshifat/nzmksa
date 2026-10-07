@@ -5,6 +5,7 @@ import {
   Navigate,
   useLocation,
 } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute, {
@@ -50,12 +51,36 @@ function AppRoutes() {
   const isAdminRoute =
     location.pathname.startsWith('/admin');
 
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('absher_theme');
+
+    return savedTheme === 'dark' ? 'dark' : 'light';
+  });
+
+  const isDark = theme === 'dark';
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const savedTheme = localStorage.getItem('absher_theme');
+
+      setTheme(savedTheme === 'dark' ? 'dark' : 'light');
+    };
+
+    window.addEventListener('storage', handleThemeChange);
+
+    return () => {
+      window.removeEventListener('storage', handleThemeChange);
+    };
+  }, []);
+
   return (
     <div
       className={
         isAdminRoute
-          ? 'min-h-[100dvh] w-full bg-gray-50 font-sans!'
-          : 'relative mx-auto min-h-[100dvh] w-full max-w-md bg-black font-sans!'
+          ? `min-h-[100dvh] w-full font-sans! ${isDark ? 'bg-[#101714]' : 'bg-gray-50'
+          }`
+          : `relative mx-auto min-h-[100dvh] w-full max-w-md font-sans! ${isDark ? 'bg-[#101714]' : 'bg-white'
+          }`
       }
     >
       <Routes>

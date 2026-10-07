@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { Moon, UserRound } from 'lucide-react';
+
 import SubPageHeader from '../../components/SubPageHeader';
 import ExpandableSection, {
   Accordion,
@@ -9,6 +12,34 @@ import { useAuth } from '../../context/AuthContext';
 export default function PersonalDetails() {
   const { user } = useAuth();
 
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return localStorage.getItem('absher_theme') === 'dark'
+      ? 'dark'
+      : 'light';
+  });
+
+  useEffect(() => {
+    const updateTheme = () => {
+      setTheme(
+        localStorage.getItem('absher_theme') === 'dark'
+          ? 'dark'
+          : 'light'
+      );
+    };
+
+    updateTheme();
+
+    window.addEventListener('storage', updateTheme);
+
+    return () => {
+      window.removeEventListener('storage', updateTheme);
+    };
+
+
+  }, []);
+
+  const isDark = theme === 'dark';
+
   const e = user;
 
   if (!e) {
@@ -16,10 +47,13 @@ export default function PersonalDetails() {
   }
 
   const hajjDetails = e.hajjDetails;
+  const variant = isDark ? 'dark' : 'light';
 
   return (
-    <div className="min-h-full bg-black pb-10">
-      <SubPageHeader title="My Personal Details" />
+    <div
+      className={`min-h-[100vh] pb-10 ${isDark ? 'bg-black' : 'bg-[#F4F8F6]'
+        }`}
+    > <SubPageHeader title="My Personal Details" />
 
       <div className="px-4">
         <Accordion defaultOpen="personal">
@@ -34,30 +68,40 @@ export default function PersonalDetails() {
               />
             }
             title="Personal Details"
+            variant={variant}
           >
             <DetailRow
               label="Name"
               value={e.name}
+              variant={variant}
             />
 
             <DetailRow
               label="Birth City"
               value={e.birthCity}
+              variant={variant}
             />
 
             <DetailRow
               label="Birth Country/Region"
               value={e.birthCountry}
+              variant={variant}
             />
 
             <DetailRow
               label="Date of Birth"
-              value={e.dateOfBirth}
+              value={
+                e.dateOfBirth
+                  ? formatDate(e.dateOfBirth)
+                  : undefined
+              }
+              variant={variant}
             />
 
             <DetailRow
               label="Marital Status"
               value={e.maritalStatus}
+              variant={variant}
             />
 
             <DetailRow
@@ -67,48 +111,73 @@ export default function PersonalDetails() {
                   ? String(e.sponsorshipTransfers)
                   : undefined
               }
+              variant={variant}
             />
 
             <DetailRow
               label="Religion"
               value={e.religion}
+              variant={variant}
             />
 
             <DetailRow
               label="Work Permit"
               value={e.workPermit}
+              variant={variant}
             />
           </ExpandableSection>
 
           {/* Sponsor Details */}
           <ExpandableSection
             id="sponsor"
-            icon={<PersonOutline />}
+            icon={<UserRound size={22} strokeWidth={1.6} />}
             title="Sponsor Details"
+            variant={variant}
           >
             <DetailRow
               label="Sponsor Name"
               value={e.sponsorName}
               copyable
+              variant={variant}
             />
 
             <DetailRow
               label="Sponsor ID Number"
               value={e.sponsorIdNumber}
               copyable
+              variant={variant}
             />
           </ExpandableSection>
 
           {/* Health Insurance */}
           <ExpandableSection
             id="health"
-            icon={<MoonOutline />}
+            icon={<Moon size={22} strokeWidth={1.6} />}
             title="Health Insurance"
+            variant={variant}
+
           >
-            <p className="py-2 text-sm text-white/50">
-              No active health insurance policy on file.
-            </p>
-          </ExpandableSection>
+
+            <DetailRow
+              label="Issuing Date"
+              value={
+                e.healthInsurance?.issuingDate
+                  ? formatDate(e.healthInsurance.issuingDate)
+                  : undefined
+              }
+              variant={variant}
+            />
+
+            <DetailRow
+              label="Expiry Date"
+              value={
+                e.healthInsurance?.expiryDate
+                  ? formatDate(e.healthInsurance.expiryDate)
+                  : undefined
+              }
+              variant={variant}
+            /> </ExpandableSection>
+
 
           {/* Hajj Details */}
           <ExpandableSection
@@ -120,9 +189,13 @@ export default function PersonalDetails() {
               />
             }
             title="Hajj Details"
+            variant={variant}
           >
             <div className="py-2">
-              <p className="text-[13px] font-semibold text-white">
+              <p
+                className={`text-[13px] font-semibold ${isDark ? 'text-white' : 'text-black'
+                  }`}
+              >
                 Hajj Status
               </p>
 
@@ -138,52 +211,18 @@ export default function PersonalDetails() {
             <DetailRow
               label="Last Hajj Year"
               value={hajjDetails?.lastHajjYear}
+              variant={variant}
             />
           </ExpandableSection>
         </Accordion>
       </div>
     </div>
+
   );
 }
 
-/*
- * Sponsor icon
- */
-function PersonOutline() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    >
-      <circle
-        cx="12"
-        cy="8"
-        r="3.2"
-      />
+function formatDate(date: string) {
+  const [year, month, day] = date.split('-');
 
-      <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" />
-    </svg>
-  );
-}
-
-/*
- * Health insurance icon
- */
-function MoonOutline() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    >
-      <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
-    </svg>
-  );
+  return `${day}-${month}-${year}`;
 }

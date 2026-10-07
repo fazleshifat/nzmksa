@@ -5,6 +5,7 @@ import { CapacitorPasskey } from '@capgo/capacitor-passkey'
 
 import './index.css'
 import App from './App.tsx'
+import { ThemeProvider } from './context/ThemeContext'
 
 async function bootstrap() {
   try {
@@ -28,7 +29,9 @@ async function bootstrap() {
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </StrictMode>,
   )
 }

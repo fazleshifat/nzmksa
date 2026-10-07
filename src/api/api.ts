@@ -43,7 +43,8 @@ export interface Employee {
     };
 
     healthInsurance?: {
-        [key: string]: unknown;
+        expiryDate?: string;
+        issuingDate?: string;
     };
 
     hajjDetails?: {
