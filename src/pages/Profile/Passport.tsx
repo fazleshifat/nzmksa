@@ -17,8 +17,8 @@ export default function Passport() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = localStorage.getItem('absher_theme');
 
-    
-return savedTheme === 'dark' ? 'dark' : 'light';
+
+    return savedTheme === 'dark' ? 'dark' : 'light';
 
 
   });
@@ -30,26 +30,26 @@ return savedTheme === 'dark' ? 'dark' : 'light';
     const handleThemeChange = () => {
       const savedTheme = localStorage.getItem('absher_theme');
 
-      
-  setTheme(
-    savedTheme === 'dark' ? 'dark' : 'light'
-  );
-};
 
-window.addEventListener(
-  'storage',
-  handleThemeChange
-);
+      setTheme(
+        savedTheme === 'dark' ? 'dark' : 'light'
+      );
+    };
 
-return () => {
-  window.removeEventListener(
-    'storage',
-    handleThemeChange
-  );
-};
+    window.addEventListener(
+      'storage',
+      handleThemeChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        'storage',
+        handleThemeChange
+      );
+    };
 
 
-    }, []);
+  }, []);
 
   if (!user) {
     return null;
@@ -60,27 +60,27 @@ return () => {
   const handleCopy = async () => {
     const passportNumber = p?.passportNumber;
 
-    
-if (!passportNumber) {
-  return;
-}
 
-try {
-  await navigator.clipboard.writeText(
-    passportNumber
-  );
+    if (!passportNumber) {
+      return;
+    }
 
-  setCopied(true);
+    try {
+      await navigator.clipboard.writeText(
+        passportNumber
+      );
 
-  setTimeout(() => {
-    setCopied(false);
-  }, 2000);
-} catch (error) {
-  console.error(
-    'Failed to copy passport number:',
-    error
-  );
-}
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error(
+        'Failed to copy passport number:',
+        error
+      );
+    }
 
 
   };
@@ -91,7 +91,7 @@ try {
         }`}
     > <SubPageHeader title="My Passport" />
 
-      
+
       <div className="flex flex-col gap-3 px-4">
         {/* Amount Deposit */}
         <div
@@ -107,8 +107,8 @@ try {
 
           <p
             className={`mt-1 text-[15px] ${isDark
-                ? 'text-white/60'
-                : 'text-black/60'
+              ? 'text-white/60'
+              : 'text-black/60'
               }`}
           >
             {p?.amountDeposit || 'N/A'}
@@ -132,8 +132,8 @@ try {
               <div className="min-w-0">
                 <p
                   className={`text-[13px] font-semibold ${isDark
-                      ? 'text-white'
-                      : 'text-black'
+                    ? 'text-white'
+                    : 'text-black'
                     }`}
                 >
                   Passport Number
@@ -141,8 +141,8 @@ try {
 
                 <p
                   className={`mt-1 break-words text-[15px] ${isDark
-                      ? 'text-white/60'
-                      : 'text-black/60'
+                    ? 'text-white/60'
+                    : 'text-black/60'
                     }`}
                 >
                   {p?.passportNumber || 'N/A'}
@@ -156,8 +156,8 @@ try {
                     onClick={handleCopy}
                     aria-label="Copy passport number"
                     className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-all active:scale-90 ${isDark
-                        ? 'text-brand-mint hover:bg-white/5'
-                        : 'text-brand-green hover:bg-black/5'
+                      ? 'text-brand-mint hover:bg-white/5'
+                      : 'text-brand-green hover:bg-black/5'
                       }`}
                   >
                     {copied ? (
@@ -176,8 +176,8 @@ try {
                   {/* Tooltip */}
                   <span
                     className={`pointer-events-none absolute right-0 top-full z-20 mt-2 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[11px] font-medium shadow-lg transition-all ${isDark
-                        ? 'bg-white text-black'
-                        : 'bg-black text-white'
+                      ? 'bg-white text-black'
+                      : 'bg-black text-white'
                       } ${copied
                         ? 'visible translate-y-0 opacity-100'
                         : 'invisible -translate-y-1 opacity-0 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100'
@@ -232,11 +232,60 @@ try {
     </div>
 
 
-);
+  );
 }
 
 function formatDate(date: string) {
-const [year, month, day] = date.split('-');
+  if (!date) return '';
 
-return `${ day } -${ month } -${ year } `;
+  // YYYY-MM-DD
+  // Example: 2026-10-25 → 25-10-2026
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-');
+    return `${day}-${month}-${year}`;
+  }
+
+  // DD-MM-YYYY
+  // Example: 20-10-2024 → 20-10-2024
+  if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+    return date;
+  }
+
+  // DD/MM/YYYY
+  // Example: 18/12/2025 → 18-12-2025
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+    const [day, month, year] = date.split('/');
+    return `${day}-${month}-${year}`;
+  }
+
+  // DD Mon YYYY
+  // Example: 08 Jul 2026 → 08-07-2026
+  if (/^\d{2}\s[A-Za-z]{3}\s\d{4}$/.test(date)) {
+    const [day, monthName, year] = date.split(' ');
+
+    const months: Record<string, string> = {
+      Jan: '01',
+      Feb: '02',
+      Mar: '03',
+      Apr: '04',
+      May: '05',
+      Jun: '06',
+      Jul: '07',
+      Aug: '08',
+      Sep: '09',
+      Oct: '10',
+      Nov: '11',
+      Dec: '12',
+    };
+
+    const month = months[monthName];
+
+    if (month) {
+      return `${day}-${month}-${year}`;
+    }
+  }
+
+  // Unknown format
+  // Return original value instead of showing undefined
+  return date;
 }

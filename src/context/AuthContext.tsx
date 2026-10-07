@@ -40,53 +40,19 @@ interface AuthContextValue {
 
   role: AccountRole | null;
 
-  /**
-   * Whether the currently authenticated
-   * account has at least one passkey.
-   *
-   * Works for:
-   * - Employee
-   * - Admin
-   * - Super Admin
-   */
   hasPasskey: boolean;
 
-  /**
-   * Password login.
-   *
-   * Employee:
-   *   Resident ID
-   *
-   * Admin / Super Admin:
-   *   Email
-   */
   login: (
     idNumberOrEmail: string,
     password: string
   ) => Promise<boolean>;
 
-  /**
-   * Passkey login.
-   *
-   * Employee:
-   *   Resident ID
-   *
-   * Admin / Super Admin:
-   *   Email
-   */
   loginWithPasskey: (
     identifier: string
   ) => Promise<boolean>;
 
-  /**
-   * Register a passkey for the
-   * currently authenticated account.
-   */
   registerPasskey: () => Promise<boolean>;
 
-  /**
-   * Logout current account.
-   */
   logout: () => Promise<void>;
 }
 
@@ -222,16 +188,6 @@ export function AuthProvider({
 
     const initialize = async () => {
       try {
-        /*
-         * Initialize Capacitor Passkey before
-         * restoring the authentication session.
-         *
-         * Android:
-         *   Enables native WebAuthn bridge.
-         *
-         * Browser:
-         *   Keeps normal browser WebAuthn.
-         */
         await initializePasskey();
       } catch (error) {
         console.error(
@@ -246,10 +202,6 @@ export function AuthProvider({
     };
 
     initialize();
-
-    // ------------------------------------------------------------------------
-    // Restore/check session when app becomes active again.
-    // ------------------------------------------------------------------------
 
     const listenerPromise =
       App.addListener(
@@ -286,17 +238,13 @@ export function AuthProvider({
       const savedToken =
         tokenResult.value;
 
-      // ----------------------------------------------------------------------
-      // No saved token
-      // ----------------------------------------------------------------------
-
       if (!savedToken) {
         clearAuthState();
         return;
       }
 
       // ----------------------------------------------------------------------
-      // Check local 24-hour session
+      // LOCAL 24-HOUR SESSION CHECK
       // ----------------------------------------------------------------------
 
       const loginTimeResult =
@@ -311,9 +259,7 @@ export function AuthProvider({
         const loginTime =
           Number(savedLoginTime);
 
-        if (
-          !Number.isFinite(loginTime)
-        ) {
+        if (!Number.isFinite(loginTime)) {
           await clearStoredSession();
           clearAuthState();
           return;
@@ -333,7 +279,7 @@ export function AuthProvider({
       }
 
       // ----------------------------------------------------------------------
-      // Verify token with backend
+      // VERIFY TOKEN WITH BACKEND
       // ----------------------------------------------------------------------
 
       const response =
@@ -357,14 +303,9 @@ export function AuthProvider({
         });
 
         setUser(null);
-
-        setAdmin(
-          response.admin
-        );
-
+        setAdmin(response.admin);
         setRole("superadmin");
 
-        // Check passkey status.
         try {
           const passkeyStatus =
             await getPasskeyStatus();
@@ -402,14 +343,9 @@ export function AuthProvider({
         });
 
         setUser(null);
-
-        setAdmin(
-          response.admin
-        );
-
+        setAdmin(response.admin);
         setRole("admin");
 
-        // Check passkey status.
         try {
           const passkeyStatus =
             await getPasskeyStatus();
@@ -447,14 +383,9 @@ export function AuthProvider({
         });
 
         setAdmin(null);
-
-        setUser(
-          response.user
-        );
-
+        setUser(response.user);
         setRole("user");
 
-        // Prefer /me response when available.
         if (
           response.hasPasskey !==
           undefined
@@ -485,13 +416,10 @@ export function AuthProvider({
         return;
       }
 
-      // ----------------------------------------------------------------------
-      // Invalid session response
-      // ----------------------------------------------------------------------
-
       throw new Error(
         "Invalid session response"
       );
+
     } catch (error) {
       console.error(
         "RESTORE SESSION ERROR:",
@@ -501,6 +429,7 @@ export function AuthProvider({
       await clearStoredSession();
 
       clearAuthState();
+
     } finally {
       setLoading(false);
     }
@@ -546,28 +475,21 @@ export function AuthProvider({
       }
 
       // =========================================================================
-      // SUPER ADMIN PASSWORD LOGIN
+      // SUPER ADMIN
       // =========================================================================
 
       if (
         response.role === "superadmin" &&
         response.admin
       ) {
-        const adminIdentifier =
-          response.admin.email;
-
         await saveSession(
           String(response.token),
-          String(adminIdentifier),
+          String(response.admin.email),
           "superadmin"
         );
 
         setUser(null);
-
-        setAdmin(
-          response.admin
-        );
-
+        setAdmin(response.admin);
         setRole("superadmin");
 
         let adminHasPasskey =
@@ -596,28 +518,21 @@ export function AuthProvider({
       }
 
       // =========================================================================
-      // ADMIN PASSWORD LOGIN
+      // ADMIN
       // =========================================================================
 
       if (
         response.role === "admin" &&
         response.admin
       ) {
-        const adminIdentifier =
-          response.admin.email;
-
         await saveSession(
           String(response.token),
-          String(adminIdentifier),
+          String(response.admin.email),
           "admin"
         );
 
         setUser(null);
-
-        setAdmin(
-          response.admin
-        );
-
+        setAdmin(response.admin);
         setRole("admin");
 
         let adminHasPasskey =
@@ -646,29 +561,23 @@ export function AuthProvider({
       }
 
       // =========================================================================
-      // EMPLOYEE PASSWORD LOGIN
+      // EMPLOYEE
       // =========================================================================
 
       if (
         response.role === "user" &&
         response.user
       ) {
-        const employeeIdentifier =
-          response.user
-            .residentIdNumber;
-
         await saveSession(
           String(response.token),
-          String(employeeIdentifier),
+          String(
+            response.user.residentIdNumber
+          ),
           "user"
         );
 
         setAdmin(null);
-
-        setUser(
-          response.user
-        );
-
+        setUser(response.user);
         setRole("user");
 
         let employeeHasPasskey =
@@ -701,14 +610,11 @@ export function AuthProvider({
         return true;
       }
 
-      // ----------------------------------------------------------------------
-      // Invalid response
-      // ----------------------------------------------------------------------
-
       await clearStoredSession();
       clearAuthState();
 
       return false;
+
     } catch (error) {
       console.error(
         "PASSWORD LOGIN ERROR:",
@@ -744,122 +650,89 @@ export function AuthProvider({
           return false;
         }
 
-        // =========================================================================
-        // EMPLOYEE PASSKEY LOGIN
-        // =========================================================================
+        // ----------------------------------------------------------------------
+        // EMPLOYEE
+        // ----------------------------------------------------------------------
 
         if (
           response.accountType ===
-            "employee" &&
+          "employee" &&
           response.role === "user" &&
           response.user
         ) {
-          const employeeIdentifier =
-            response.user
-              .residentIdNumber;
-
           await saveSession(
             String(response.token),
-            String(employeeIdentifier),
+            String(
+              response.user.residentIdNumber
+            ),
             "user"
           );
 
           setAdmin(null);
-
-          setUser(
-            response.user
-          );
-
+          setUser(response.user);
           setRole("user");
-
-          /*
-           * Successful passkey authentication
-           * means this account has a passkey.
-           */
           setHasPasskey(true);
-
           setIsAuthenticated(true);
 
           return true;
         }
 
-        // =========================================================================
-        // ADMIN PASSKEY LOGIN
-        // =========================================================================
+        // ----------------------------------------------------------------------
+        // ADMIN
+        // ----------------------------------------------------------------------
 
         if (
           response.accountType ===
-            "admin" &&
+          "admin" &&
           response.role === "admin" &&
           response.admin
         ) {
-          const adminIdentifier =
-            response.admin.email;
-
           await saveSession(
             String(response.token),
-            String(adminIdentifier),
+            String(response.admin.email),
             "admin"
           );
 
           setUser(null);
-
-          setAdmin(
-            response.admin
-          );
-
+          setAdmin(response.admin);
           setRole("admin");
-
           setHasPasskey(true);
-
           setIsAuthenticated(true);
 
           return true;
         }
 
-        // =========================================================================
-        // SUPER ADMIN PASSKEY LOGIN
-        // =========================================================================
+        // ----------------------------------------------------------------------
+        // SUPER ADMIN
+        // ----------------------------------------------------------------------
 
         if (
           response.accountType ===
-            "admin" &&
+          "admin" &&
           response.role ===
-            "superadmin" &&
+          "superadmin" &&
           response.admin
         ) {
-          const adminIdentifier =
-            response.admin.email;
-
           await saveSession(
             String(response.token),
-            String(adminIdentifier),
+            String(response.admin.email),
             "superadmin"
           );
 
           setUser(null);
-
-          setAdmin(
-            response.admin
-          );
-
+          setAdmin(response.admin);
           setRole("superadmin");
-
           setHasPasskey(true);
-
           setIsAuthenticated(true);
 
           return true;
         }
-
-        // ----------------------------------------------------------------------
-        // Invalid passkey response
-        // ----------------------------------------------------------------------
 
         await clearStoredSession();
         clearAuthState();
 
         return false;
+
       } catch (error) {
         console.error(
           "PASSKEY LOGIN ERROR:",
@@ -877,16 +750,6 @@ export function AuthProvider({
   const registerPasskey =
     async (): Promise<boolean> => {
       try {
-        /*
-         * Registration uses the currently
-         * authenticated JWT.
-         *
-         * Supported:
-         *
-         * Employee
-         * Admin
-         * Super Admin
-         */
         const response =
           await registerPasskeyService();
 
@@ -898,6 +761,7 @@ export function AuthProvider({
         }
 
         return success;
+
       } catch (error) {
         console.error(
           "PASSKEY REGISTRATION ERROR:",
@@ -915,21 +779,47 @@ export function AuthProvider({
   const logout =
     async (): Promise<void> => {
       try {
+        /*
+         * IMPORTANT:
+         *
+         * Do this BEFORE deleting absher_token.
+         *
+         * apiFetch needs the current JWT so the backend can identify
+         * which session should be marked as logged out.
+         */
         await apiFetch(
           "/api/auth/logout",
           {
             method: "POST",
           }
         );
+
+        console.log(
+          "LOGOUT: Backend logout request completed."
+        );
+
       } catch (error) {
+        /*
+         * Even if the backend request fails, clear the local session.
+         *
+         * This prevents the user from being stuck inside the app.
+         *
+         * The backend route still needs to exist for the Admin Sessions
+         * page to correctly record the logout.
+         */
         console.error(
           "LOGOUT API ERROR:",
           error
         );
+
       } finally {
         await clearStoredSession();
 
         clearAuthState();
+
+        console.log(
+          "LOGOUT: Local authentication state cleared."
+        );
       }
     };
 

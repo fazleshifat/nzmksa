@@ -196,7 +196,53 @@ function CheckIcon() {
 }
 
 function formatDate(date: string) {
-  const [year, month, day] = date.split('-');
+  if (!date) return '';
 
-  return `${day}-${month}-${year}`;
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-');
+    return `${day}-${month}-${year}`;
+  }
+
+  // DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+    return date;
+  }
+
+  // DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+    const [day, month, year] = date.split('/');
+    return `${day}-${month}-${year}`;
+  }
+
+  // DD Mon YYYY
+  // Example: 08 Jul 2026
+  if (/^\d{2}\s[A-Za-z]{3}\s\d{4}$/.test(date)) {
+    const [day, monthName, year] = date.split(' ');
+
+    const months: Record<string, string> = {
+      Jan: '01',
+      Feb: '02',
+      Mar: '03',
+      Apr: '04',
+      May: '05',
+      Jun: '06',
+      Jul: '07',
+      Aug: '08',
+      Sep: '09',
+      Oct: '10',
+      Nov: '11',
+      Dec: '12',
+    };
+
+    const month = months[monthName];
+
+    if (month) {
+      return `${day}-${month}-${year}`;
+    }
+  }
+
+  // Unknown format — return original value instead of
+  // producing undefined-undefined-...
+  return date;
 }

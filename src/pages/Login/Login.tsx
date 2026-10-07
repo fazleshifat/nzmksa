@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Preferences } from '@capacitor/preferences';
 
 import {
+  Check,
   Fingerprint,
   X,
 } from 'lucide-react';
@@ -45,6 +46,15 @@ export default function Login() {
     setIsSettingUpPasskey,
   ] = useState(false);
 
+  /*
+   * IMPORTANT:
+   *
+   * This state and all passkey registration code are intentionally
+   * kept in the component.
+   *
+   * However, normal password login will NOT automatically open
+   * the passkey setup sheet anymore.
+   */
   const [
     showPasskeySetup,
     setShowPasskeySetup,
@@ -72,9 +82,7 @@ export default function Login() {
             });
 
           if (result.value) {
-            setIdNumber(
-              result.value
-            );
+            setIdNumber(result.value);
           }
         } catch (error) {
           console.error(
@@ -177,9 +185,9 @@ export default function Login() {
     setIsLoggingIn(true);
 
     try {
-      // ----------------------------------------------------------------------
+      // ======================================================================
       // LOGIN
-      // ----------------------------------------------------------------------
+      // ======================================================================
 
       const success =
         await login(
@@ -195,18 +203,17 @@ export default function Login() {
         return;
       }
 
-      // ----------------------------------------------------------------------
-      // Save the account identifier
-      // ----------------------------------------------------------------------
+      // ======================================================================
+      // SAVE LAST LOGIN IDENTIFIER
+      // ======================================================================
 
       await saveLastLoginIdentifier(
         cleanIdentifier
       );
 
-      // ----------------------------------------------------------------------
-      // Read the role directly from Preferences.
-      // This avoids relying on asynchronous React state.
-      // ----------------------------------------------------------------------
+      // ======================================================================
+      // GET ROLE DIRECTLY FROM PREFERENCES
+      // ======================================================================
 
       const roleResult =
         await Preferences.get({
@@ -229,21 +236,20 @@ export default function Login() {
       }
 
       // ======================================================================
-      // FIX #1
+      // PASSKEY STATUS CHECK
       //
-      // Do NOT use the old `hasPasskey` React state here.
+      // The status check is intentionally kept here.
       //
-      // Immediately ask the backend for the REAL current passkey status.
+      // It is useful for debugging and for future passkey logic.
+      //
+      // BUT:
+      //
+      // It no longer controls whether the setup sheet opens.
       // ======================================================================
-
-      let accountHasPasskey = false;
 
       try {
         const passkeyStatus =
           await getPasskeyStatus();
-
-        accountHasPasskey =
-          passkeyStatus.hasPasskey;
 
         console.log(
           'PASSKEY: Current backend status:',
@@ -256,65 +262,43 @@ export default function Login() {
         );
 
         /*
-         * Login itself succeeded.
-         *
-         * If the status request fails, do NOT incorrectly show
-         * "Set Up Passkey" because we cannot confirm that a passkey
-         * is missing.
-         *
-         * Simply continue to the dashboard.
+         * Do NOT block password login if passkey status
+         * cannot be checked.
          */
-
-        navigate(
-          getDashboardRoute(
-            loggedInRole as
-              | 'user'
-              | 'admin'
-              | 'superadmin'
-          ),
-          {
-            replace: true,
-          }
-        );
-
-        return;
       }
 
       // ======================================================================
-      // EXISTING PASSKEY
-      // ======================================================================
-
-      if (accountHasPasskey) {
-        console.log(
-          'PASSKEY: Passkey already exists. Skipping setup.'
-        );
-
-        navigate(
-          getDashboardRoute(
-            loggedInRole as
-              | 'user'
-              | 'admin'
-              | 'superadmin'
-          ),
-          {
-            replace: true,
-          }
-        );
-
-        return;
-      }
-
-      // ======================================================================
-      // NO PASSKEY
+      // IMPORTANT FIX
       //
-      // Only now show the setup popup.
+      // Previously the code did:
+      //
+      // setShowPasskeySetup(true);
+      //
+      // That was the reason the Passkey Setup bottom sheet appeared
+      // immediately after normal password login.
+      //
+      // It is intentionally NOT called anymore.
+      //
+      // Normal password login now goes directly to the dashboard.
       // ======================================================================
 
       console.log(
-        'PASSKEY: No passkey found. Showing setup.'
+        'PASSWORD LOGIN: Successful. Passkey setup is disabled for now.'
       );
 
-      setShowPasskeySetup(true);
+      navigate(
+        getDashboardRoute(
+          loggedInRole as
+          | 'user'
+          | 'admin'
+          | 'superadmin'
+        ),
+        {
+          replace: true,
+        }
+      );
+
+      return;
 
     } catch (error) {
       console.error(
@@ -383,6 +367,11 @@ export default function Login() {
 
   // ==========================================================================
   // SET UP PASSKEY
+  //
+  // KEPT IN CODE FOR FUTURE USE.
+  //
+  // This function is currently not triggered automatically by
+  // normal password login.
   // ==========================================================================
 
   const handleSetupPasskey =
@@ -420,9 +409,9 @@ export default function Login() {
           return;
         }
 
-        // --------------------------------------------------------------------
-        // Registration succeeded.
-        // --------------------------------------------------------------------
+        // ====================================================================
+        // REGISTRATION SUCCEEDED
+        // ====================================================================
 
         setShowPasskeySetup(false);
 
@@ -443,9 +432,7 @@ export default function Login() {
           error instanceof Error &&
           error.message
         ) {
-          setError(
-            error.message
-          );
+          setError(error.message);
         } else {
           setError(
             'Unable to set up passkey. Please try again.'
@@ -458,13 +445,13 @@ export default function Login() {
 
   // ==========================================================================
   // SKIP PASSKEY SETUP
+  //
+  // KEPT IN CODE FOR FUTURE USE.
   // ==========================================================================
 
   const handleMaybeLater =
     () => {
-      if (
-        isSettingUpPasskey
-      ) {
+      if (isSettingUpPasskey) {
         return;
       }
 
@@ -485,7 +472,7 @@ export default function Login() {
   // ==========================================================================
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col bg-[#F4F8F6] px-4 pt-6 pb-4">
+    <div className="relative flex min-h-[100dvh] w-full flex-col bg-[#F4F8F6] px-4 pb-4 pt-6">
 
       {/* ================================================================== */}
       {/* Back */}
@@ -647,24 +634,18 @@ export default function Login() {
         >
 
           <span
-            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
-              keepLoggedIn
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${keepLoggedIn
                 ? 'border-brand-green bg-brand-green'
                 : 'border-black/25 bg-transparent'
-            }`}
+              }`}
           >
 
             {keepLoggedIn && (
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="3"
-              >
-                <path d="m5 13 4 4L19 7" />
-              </svg>
+              <Check
+                size={12}
+                strokeWidth={3}
+                className="text-white"
+              />
             )}
 
           </span>
@@ -717,10 +698,6 @@ export default function Login() {
 
         </div>
       </form>
-
-      {/* ================================================================== */}
-      {/* PASSKEY SETUP MOBILE-SIZED OVERLAY */}
-      {/* ================================================================== */}
 
       {showPasskeySetup && (
         <div
@@ -909,3 +886,4 @@ export default function Login() {
     </div>
   );
 }
+
